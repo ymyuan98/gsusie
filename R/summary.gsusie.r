@@ -1,24 +1,24 @@
 #' @title Summarize G-SuSiE Fit.
-#' 
+#'
 #' @description \code{summary} method for the \dQuote{gsusie} class
-#' Almost the same as in 
+#' Almost the same as in
 #' [https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R],
 #' except that we change the output class into "summary.gsusie"...(?)
-#' 
+#'
 #' @param object A gsusie fit
-#' 
-#' @param \dots Additional arguments passed to the generic \code{summary} 
+#'
+#' @param \dots Additional arguments passed to the generic \code{summary}
 #'  or \code{print.summary} method.
-#' 
+#'
 #' @return a list containing a data frame of variables and a data frame
 #'  of credible sets.
-#' 
+#'
 #' @method summary gsusie
-#' 
+#'
 #' @export summary.gsusie
-#' 
-#' @export 
-#' 
+#'
+#' @export
+#'
 summary.gsusie <- function (object, ...) {
   if (is.null(object$sets))
     stop("Cannot summarize GSuSiE object because credible set information ",
@@ -30,14 +30,12 @@ summary.gsusie <- function (object, ...) {
     variables <- variables[-object$null_index,]
   if (!is.null(object$sets$cs)) {
     cs <- data.frame(matrix(NA, length(object$sets$cs), 5))
-    # colnames(cs) <- c("cs", "cs_log10bf", "cs_avg_r2", "cs_min_r2", "variable")
-    colnames(cs) <- c("cs", "cs_log_abf", "cs_avg_r2", "cs_min_r2", "variable")
+    colnames(cs) <- c("cs", "cs_loge_abf", "cs_avg_r2", "cs_min_r2", "variable")
       for (i in 1:length(object$sets$cs)) {
         variables$cs[variables$variable %in% object$sets$cs[[i]]] <-
           object$sets$cs_index[[i]]
         cs$cs[i] <- object$sets$cs_index[[i]]
-        # cs$cs_log10bf[i] <- log10(exp(object$lbf[cs$cs[i]])) ## may result in Inf in Poisson regression
-        cs$cs_log_abf[i] <- object$lbf[cs$cs[i]]
+        cs$cs_loge_abf[i] <- object$lbf[cs$cs[i]]
         cs$cs_avg_r2[i] <- object$sets$purity$mean.abs.corr[i]^2
         cs$cs_min_r2[i] <- object$sets$purity$min.abs.corr[i]^2
         cs$variable[i] <- paste(object$sets$cs[[i]],collapse=",")
@@ -51,15 +49,15 @@ summary.gsusie <- function (object, ...) {
 }
 
 #' @rdname summary.gsusie
-#' 
+#'
 #' @param x A (g)susie summary.
 #'
 #' @method print summary.gsusie
-#' 
+#'
 #' @export print.summary.gsusie
-#' 
+#'
 #' @export
-#' 
+#'
 print.summary.gsusie <- function (x, ...) {
   cat("\nVariables in credible sets:\n\n")
   print.data.frame(x$vars[which(x$vars$cs > 0),],row.names = FALSE)
@@ -69,41 +67,41 @@ print.summary.gsusie <- function (x, ...) {
 
 
 #' @rdname summary.gsusie
-#' 
+#'
 #' @param object a gsusie fit
-#' 
-#' @param vars an array of numerical indices or variable names 
-#'    presented in the output. If \code{var_names = NULL}, 
-#'    by default the output contains coefficients of all variables 
-#'    if \code{ncol(X)<= 10} or \code{top_n} variables with highest PIPs 
+#'
+#' @param vars an array of numerical indices or variable names
+#'    presented in the output. If \code{var_names = NULL},
+#'    by default the output contains coefficients of all variables
+#'    if \code{ncol(X)<= 10} or \code{top_n} variables with highest PIPs
 #'    if \code{ncol(X) > 10}.
 #'
-#' @param decreasing logical, whether to list the variables 
+#' @param decreasing logical, whether to list the variables
 #'    in decreasing order of PIP values.
-#' 
+#'
 #' @param cred_int logical, whether to return equal-tailed credible intervels
-#' 
-#' @param coverage numeric, between 0 and 1, the coverage probability 
+#'
+#' @param coverage numeric, between 0 and 1, the coverage probability
 #'    of credible intervals.
-#'    
-#' @param digits integer indicating the number of decimal places to be used. 
-#'    if \code{digits == NULL}, the output will not be rounded. 
-#' 
+#'
+#' @param digits integer indicating the number of decimal places to be used.
+#'    if \code{digits == NULL}, the output will not be rounded.
+#'
 #' @method summarize gsusie coefficients
-#' 
+#'
 #' @export coefficients.gsusie
-#' 
+#'
 #' @export
-#' 
-coefficients.gsusie <- function(object, vars = NULL, 
-                                decreasing = TRUE, 
+#'
+coefficients.gsusie <- function(object, vars = NULL,
+                                decreasing = TRUE,
                                 top_n = 10,
-                                cred_int = TRUE, 
-                                coverage = 0.95, 
+                                cred_int = TRUE,
+                                coverage = 0.95,
                                 digits = 4, ...) {
 
-  if (is.null(object$pip) || is.null(object$mu) || is.null(object$mu2)) 
-    stop("Cannot print GSuSiE coefficients because ", 
+  if (is.null(object$pip) || is.null(object$mu) || is.null(object$mu2))
+    stop("Cannot print GSuSiE coefficients because ",
          "either PIP, mu, or mu2 is not available.")
 
   # extract variable names
@@ -143,6 +141,6 @@ coefficients.gsusie <- function(object, vars = NULL,
   if (is.null(digits)) {
     return(out)
   } else {
-    return(round(out, digits))  
+    return(round(out, digits))
   }
 }
