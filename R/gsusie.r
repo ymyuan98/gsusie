@@ -213,19 +213,23 @@ gsusie <- function(X, y,
       tracking[[tt]] <- gsusie_slim(gs_res)
     }
 
+
+    if(verbose) {
+      print(tt)
+    }
+
     gs <- update_each_effect(X, y, gs, model,
                              estimate_prior_variance = estimate_prior_variance,
                              estimate_prior_method = estimate_prior_method,
                              check_null_threshold = check_null_threshold,
-                             abnormal_proportion = abnormal_proportion) ##!
+                             abnormal_proportion = abnormal_proportion)
 
-    eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha)) ##!
+    eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
     loglik_exact[tt+1] <- sum(model$.compute_loglik_exact(eta_cur, y))
     loglik_apprx[tt+1] <- sum(model$.compute_loglik_apprx(eta_cur, y))
     elbo[tt+1] <- get_objective(X, y, gs, model)
 
     if (verbose) {
-      print(tt)
       if (!is.null(gs$abn_subjects)) {
         cat("Abnormal subjects in this round: \n")
         print(gs$abn_subjects)
