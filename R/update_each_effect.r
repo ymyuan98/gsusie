@@ -27,9 +27,20 @@ update_each_effect <- function(X, y, gs, model,
     weights <- exp(-llogw2)    ## May result in Inf or NAN!!
     gs$abn_subjects <- check_abnormal_subjects(weights)
 
+<<<<<<< Updated upstream
     # Update the pseudo-response
     zz <- model$.zz(eeta, y)
     # check any abnormal points based on log-pseudo-responses
+=======
+  # Update the overall log-pseudo-variance
+  llogw2 <- model$.logw2(gs$Xr)
+  weights <- exp(-llogw2)    ## May result in Inf or NAN!!
+  gs$abn_subjects <- check_abnormal_subjects(weights)
+  message(paste(quantiles(weights, c(0, 0.025, 0.975, 1)), collapse = " "))
+
+  gs$abn_subjects <- append(gs$abn_subjects, which(weights > 1000))
+  sub_idx <- !((1 : nrow(X)) %in% gs$abn_subjects)
+>>>>>>> Stashed changes
 
     # Update overall residuals
     rr <- zz - eeta
