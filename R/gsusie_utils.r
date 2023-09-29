@@ -4,20 +4,20 @@
 
 #' @description These functions access basic properties or
 #' draw inference from a fitted susie/gsusie model.
-#' The codes and descriptions below are copied from 
+#' The codes and descriptions below are copied from
 #' [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R]
 
 
 #' @return \code{susie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model and, optionally, at each
 #' iteration of the IBSS fitting procedure.cs
-#' 
+#'
 #' \code{susie_get_prior_variance} returns the (estimated or fixed)
 #' prior variance parameters.
-#' 
+#'
 #' \code{susie_get_posterior_mean} returns the posterior mean for the
 #' regression coefficients of the fitted susie model.
-#' 
+#'
 #' \code{susie_get_posterior_sd} returns the posterior standard
 #' deviation for coefficients of the fitted susie model.
 #'
@@ -76,27 +76,29 @@ gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
 #' @export
 #'
 gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
-    # Any warning_tol for outliers?
+  # Any warning_tol for outliers?
 
-    if (is.null(res$alpha) || is.null(res$mu)) stop("Please specify a case.")
-    if (is.null(X)) stop("Please enter data matrix X.") 
+  if (is.null(res$alpha) || is.null(res$mu)) stop("Please specify a case.")
+  if (is.null(X)) stop("Please enter data matrix X.")
 
-    model$type <- match.arg(res$family, c("binomial", "poisson"))
-    switch(model$type,
-           "binomial" = {model$.logw2 <- compute_logw2_logistic},
-           "poisson"  = {model$.logw2 <- compute_logw2_poisson}
-           )
-    
-    if (scale) {
-        X <- apply(as.matrix(1:ncol(X)), 1,
-                   function(j){(X[, j] - res$X_column_center_factors[j]) /
-                                    res$X_column_scale_factors[j]})
-    }
+  model$type <- match.arg(res$family, c("binomial", "poisson"))
+  switch(model$type,
+         "binomial" = {model$.logw2 <- compute_logw2_logistic},
+         "poisson"  = {model$.logw2 <- compute_logw2_poisson}
+         )
 
-    eeta <- compute_Xb(X, colSums(res$alpha * res$mu))
-    llogw2 <- model$.logw2(eeta)
+  if (scale) {
+    # TO deal with the all-one column
+    X_column_scale_factors <- res$X_column_scale_factors
+    X_column_scale_factors[X_column_scale_factors == 0] <- 1
 
-    return(llogw2)
+    X_scaled <- sweep(X,        2, res$X_column_center_factors, "-")
+    X_scaled <- sweep(X_scaled, 2, X_column_scale_factors,      "/")
+  }
+
+  eeta <- compute_Xb(X, colSums(res$alpha * res$mu))
+  llogw2 <- model$.logw2(eeta)
+  return(llogw2)
 }
 
 
@@ -105,20 +107,19 @@ gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
 #'
 gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
 
-    # # Drop the single-effects with estimated prior of zero(?)
-    # if (is.numeric(res$V)) {
-    #     include_idx <- which(res$V > prior_tol)
-    # } else {
-    #     include_idx <- 1 : nrow(res$alpha)
-    # }
-    include_idx <- 1 : nrow(res$alpha)
+    # Drop the single-effects with estimated prior of zero(?)
+    if (is.numeric(res$V)) {
+        include_idx <- which(res$V > prior_tol)
+    } else {
+        include_idx <- 1 : nrow(res$alpha)
+    }
 
     # Extract relevant rows from alpha matrix
     if (length(include_idx) > 0){
-      posterior_mean <- colSums((res$alpha * res$mu)[include_idx, , drop = FALSE]) 
-      intercept_idx <- which(res$X_column_scale_factors == 0)
-      posterior_mean[-intercept_idx] <- 
-        posterior_mean[-intercept_idx] / res$X_column_scale_factors[-intercept_idx]
+      posterior_mean <- colSums((res$alpha * res$mu)[include_idx,,drop = FALSE])
+      const_idx <- which(res$X_column_scale_factors == 0)
+      posterior_mean[-const_idx] <-
+        posterior_mean[-const_idx] / res$X_column_scale_factors[-const_idx]
       return(posterior_mean)
     }
     else
@@ -131,22 +132,23 @@ gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
 gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
 
     # Drop the single-effects with estimated prior of zero(?)
-    # if (is.numeric(res$V)) {
-    #     include_idx <- which(res$V > prior_tol)
-    # } else {
-    #     include_idx <- 1 : nrow(res$alpha)
-    # }
-    include_idx <- 1 : nrow(res$alpha)
+    if (is.numeric(res$V)) {
+        include_idx <- which(res$V > prior_tol)
+    } else {
+        include_idx <- 1 : nrow(res$alpha)
+    }
 
     #Now extract relevent rows from alpha matrix.
     if (length(include_idx) > 0) {
-      posterior_var <- colSums((res$alpha * res$mu2 - 
-                          (res$alpha * res$mu)^2)[include_idx,, drop = FALSE]) 
-      intercept_idx <- which(res$X_column_scale_factors == 0)
-      posterior_var[-intercept_idx] <- 
-        posterior_var[-intercept_idx] / res$X_column_scale_factors[-intercept_idx]
+      posterior_var <- colSums((res$alpha * res$mu2 -
+                          (res$alpha * res$mu)^2)[include_idx,, drop = FALSE])
+
+      const_idx <- which(res$X_column_scale_factors == 0)
+      posterior_var[-const_idx] <-
+        posterior_var[-const_idx] / res$X_column_scale_factors[-const_idx]
+
       return(sqrt(posterior_var))
-      
+
     } else {
        return(numeric(ncol(res$mu)))
     }
@@ -157,72 +159,59 @@ gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
 #' @export
 #'
 gsusie_get_niter <- function(res) {
-    niter <- res$niter 
-    if (is.null(niter)) stop("Please specify a case.")
-
     return(res$niter)
 }
-
-# #' @rdname susie_get_methods
-# #' @export
-#'
-# susie_get_prior_variance <- function(res) {
-#     res$V
-# }
 
 #' @rdname gsusie_get_methods
 #' @export
 #'
-gsusie_get_posterior_variance <- function(res) {
-    if (is.null(res$mu)) stop("Please specify a case.")
-
-    return(res$mu2 - res$mu^2)
+gsusie_get_prior_variance <- function(res) {
+    res$V
 }
+
 
 #' @rdname gsusie_get_methods
 #' @importFrom stats pnorm
 #' @export
 #'
 gsusie_get_lfsr <- function(res) {
-    if (is.null(res$mu)) stop("Please specify a case.")
 
-    pos_prob <- pnorm(0, mean = t(res$mu), 
+    pos_prob <- pnorm(0, mean = t(res$mu),
                          sd = sqrt(res$mu2 - res$mu^2))
     neg_prob <- 1 - pos_prob
-    return(1 - rowSums(res$alpha * t(pmax(pos_prob, neg_prob)))) 
-}  ## What is this for? 
+    return(1 - rowSums(res$alpha * t(pmax(pos_prob, neg_prob))))
+}
 
 
 #' @rdname gsusie_get_methods
-#' 
+#'
 #' @param res A susie fit, an output from \code{\link{susie}}
 #' or \code{\link{gsusie}}.
-#' 
+#'
 #' @param num_samples The number of draws from the posterior
 #' distribution.
-#' 
+#'
 #' @importFrom stats rmultinom
 #' @importFrom stats rnorm
-#' 
+#'
 #' @export
 #'
 gsusie_get_posterior_samples <- function(res, num_samples) {
 
     # Remove effects having estimated prior variance equals zero
-    # if (is.numeric(res$V)) 
-    #     include_idx <- which(res$V > 1e-9) 
-    # else
-    #     include_idx <- 1 : nrow(res$alpha)
+    if (is.numeric(res$V))
+        include_idx <- which(res$V > 1e-9)
+    else
+        include_idx <- 1 : nrow(res$alpha)
 
-    if (is.null(res$mu)) stop("Please specify a case...")
-    ## This function is to be developed for the aggregated results. 
-
-    include_idx <- 1 : nrow(res$alpha) 
-
+    ## Remember to deal with the all-one column
+    X_column_scale_factors <- res$X_column_scale_factors
+    X_column_scale_factors[X_column_scale_factors == 0] <- 1
     posterior_mean <- sweep(res$mu, 2,
-                            res$X_column_scale_factors, "/")
+                            X_column_scale_factors, "/")
     posterior_sd <- sweep(sqrt(res$mu2 - (res$mu)^2), 2,
-                            res$X_column_scale_factors, "/")
+                            X_column_scale_factors, "/")
+
 
     pip <- res$alpha
     L <- nrow(pip)
@@ -230,11 +219,12 @@ gsusie_get_posterior_samples <- function(res, num_samples) {
     bb_samples <- matrix(as.numeric(NA), p, num_samples)
     gamma_samples <- matrix(as.numeric(NA), p, num_samples)
     for (sample_i in 1 : num_samples) {
-        bb <- 0 
+        bb <- 0
         if (length(include_idx) > 0) {
             for (l in include_idx) {
                 gamma_l <- rmultinom(1, 1, pip[l, ])
-                effect_size <- rnorm(1, mean = posterior_mean[l, which(gamma_l != 0)],
+                effect_size <- rnorm(1,
+                                     mean = posterior_mean[l, which(gamma_l != 0)],
                                      sd = posterior_sd[l, which(gamma_l != 0)])
                 bb_l <- gamma_l * effect_size
                 bb <- bb + bb_l
@@ -247,51 +237,51 @@ gsusie_get_posterior_samples <- function(res, num_samples) {
 }
 
 #' @rdname gsusie_get_methods
-#' 
+#'
 #' @param X n by p matrix of values of p variables (covariates) in
 #'      n samples. When provided, correlation between variables will be
 #'      computed and used to remove CSs whose minimum correlation among
 #'      variables is smaller than \code{min_abs_corr}.
-#' 
+#'
 #' @param Xcorr p by p matrix of correlations between variables (covariates).
 #'      When provided, it will be used to remove CSs whose minimum correlation
 #'      among variables is smaller than \code{min_abs_corr}.
-#' 
+#'
 #' @param coverage A number between 0 and 1 specifying desired coverage
 #'      of each CS.
-#' 
+#'
 #' @param min_abs_corr A "purity" threshold for the CS. Any CS that contains
 #'      a pair of variables with correlation less than this threshold will be
 #'      filtered out and not reported.
-#' 
+#'
 #' @param dedup If \code{dedup = TRUE}, remove duplicate CSs.
-#' 
+#'
 #' @param squared If \code{squared = TRUE}, report min, mean and median of
 #'      squared correlation instead of the absolute correlation.
-#' 
+#'
 #' @param check_symmetric If \code{check_symmetric = TRUE}, perform a check
 #'      for symmetry of matrix \code{Xcorr} when \code{Xcorr} is provided
 #'      (not \code{NULL}).
-#' 
+#'
 #' @param n_purity The maximum number of credible set (CS) variables used in
 #'      calculating the correlation (\dQuote{purity}) statistic.
 #'      When the number of variables included in the CS is greater than
 #'      this number, the CS variables are randomly subsampled.
-#' 
+#'
 #' @param use_rfast Use the Rfast package for purity calculations.
 #'      By default \code{use_rfast = TRUE} if the Rfast package is installed.
-#' 
+#'
 #' @export
-#' 
+#'
 gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
                          check_symmetric = TRUE, n_purity = 100, use_rfast) {
 
-    if (!is.null(X) && !is.null(Xcorr)) 
-        stop("Only one of X or Xcorr should be specified") 
+    if (!is.null(X) && !is.null(Xcorr))
+        stop("Only one of X or Xcorr should be specified")
     if (check_symmetric) {
         if (!is.null(Xcorr) && !is.symmetric_matrix(Xcorr)) {
-            warning_message("X is not symmetric; forcing Xcorr to be symmetric", 
+            warning_message("X is not symmetric; forcing Xcorr to be symmetric",
                             "by replacing Xcorr with (Xcorr + t(Xcorr))/2")
             Xcorr <- Xcorr + t(Xcorr)
             Xcorr <- Xcorr / 2
@@ -301,7 +291,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     null_index <- 0
     include_idx <- rep(TRUE, nrow(res$alpha))
     if (!is.null(res$null_index)) null_index <- res$null_index
-    # if (is.numeric(res$V)) include_idx <- (res$V > 1e-9)  # We didn't estimate V..
+    if (is.numeric(res$V)) include_idx <- (res$V > 1e-9)
 
     # L x P binary matrix
     status <- in_CS(res$alpha, coverage)
@@ -324,7 +314,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     cs <- cs[include_idx]
     claimed_coverage <- claimed_coverage[include_idx]
 
-    # Compute and filter by "purity" 
+    # Compute and filter by "purity"
     if (missing(use_rfast))
         use_rfast <- requireNamespace("Rfast", quietly = TRUE)
     if (is.null(Xcorr) && is.null(X)) {
@@ -338,7 +328,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
             if (null_index > 0 && null_index %in% cs[[i]]) {
                 purity <- rbind(purity, c(-9, -9, -9))
             } else {
-                purity <- rbind(purity, 
+                purity <- rbind(purity,
                             matrix(get_purity(cs[[i]], X, Xcorr, squared,
                                       n_purity, use_rfast), 1, 3))
             }
@@ -352,7 +342,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                 c("min.abs.corr", "mean.abs.corr", "mean.abs.corr")
         }
         threshold <- ifelse(squared, min_abs_corr^2, min_abs_corr)
-        is_pure <- which(purity[, 1] >= threshold) 
+        is_pure <- which(purity[, 1] >= threshold)
         if (length(is_pure) > 0) {
             cs        <- cs[is_pure]
             purity    <- purity[is_pure, ]
@@ -369,7 +359,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                         coverage = claimed_coverage[ordering],
                         requested_coverage = coverage))
         } else {
-           return(list(cs = NULL, coverage = NULL, 
+           return(list(cs = NULL, coverage = NULL,
                        requested_coverage = coverage))
         }
     }
@@ -403,31 +393,33 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'
 #' @export
 #'
-get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, Max = FALSE) {
-    if (is.null(res$sets$cs) || length(res$sets$cs) == 1)
-        return(NA)
-    if (!is.null(X) && !is.null(Xcorr))
-        stop("Only one of X or Xcorr should be specified") 
-    if (!is.null(Xcorr) && !is.symmetric_matrix(Xcorr)) {
-        warning_message("X is not symmetric; forcing Xcorr to be symmetric",
-                        "by replacing Xcorr with (Xcorr + t(Xcorr))/2")
-        Xcorr <- Xcorr + t(Xcorr)
-        Xcorr <- Xcorr / 2
-    }
-    # Get index for the best PIP per CS
-    max_pip_idx <- sapply(res$sets$cs, 
-                          function(cs) cs[which.max(res$pip[cs])])
-    if (is.null(Xcorr)) {
-        X_sub <- X[, max_pip_idx]
-        cs_corr <- muffled_corr(as.matrix(X_sub))
-    } else {
-        cs_corr <- Xcorr[max_pip_idx, max_pip_idx]
-    }
-    if (Max) {
-        cs_corr <- max(abs(cs_corr[upper.tri(cs_corr)]))
-    }
-    rownames(cs_corr) <- colnames(cs_corr) <- names(res$sets$cs)
-    return(cs_corr)
+get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, max = FALSE) {
+    # if (is.null(res$sets$cs) || length(res$sets$cs) == 1)
+    #     return(NA)
+    # if (!is.null(X) && !is.null(Xcorr))
+    #     stop("Only one of X or Xcorr should be specified")
+    # if (!is.null(Xcorr) && !is.symmetric_matrix(Xcorr)) {
+    #     warning_message("X is not symmetric; forcing Xcorr to be symmetric",
+    #                     "by replacing Xcorr with (Xcorr + t(Xcorr))/2")
+    #     Xcorr <- Xcorr + t(Xcorr)
+    #     Xcorr <- Xcorr / 2
+    # }
+    # # Get index for the best PIP per CS
+    # max_pip_idx <- sapply(res$sets$cs,
+    #                       function(cs) cs[which.max(res$pip[cs])])
+    # if (is.null(Xcorr)) {
+    #     X_sub <- X[, max_pip_idx]
+    #     cs_corr <- muffled_corr(as.matrix(X_sub))
+    # } else {
+    #     cs_corr <- Xcorr[max_pip_idx, max_pip_idx]
+    # }
+    # if (max) {
+    #     cs_corr <- max(abs(cs_corr[upper.tri(cs_corr)]))
+    # }
+    # rownames(cs_corr) <- colnames(cs_corr) <- names(res$sets$cs)
+
+  susieR::get_cs_correlation(res, X = X, Xcorr = Xcorr, max = max)
+  return(cs_corr)
 }
 
 #' @rdname gsusie_get_methods
@@ -440,7 +432,7 @@ get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, Max = FALSE) {
 #'
 #' @export
 #'
-gsusie_get_pip <- function(res, prune_by_cs = FALSE) {
+gsusie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 
     if (inherits(res, c("gsusie", "susie"))) {  # gsusie method applicable
 
@@ -448,15 +440,14 @@ gsusie_get_pip <- function(res, prune_by_cs = FALSE) {
         if (!is.null(res$null_index) && res$null_index > 0) {
             res$alpha <- res$alpha[, -res$null_index, drop = FALSE]
         }
-        
+
         # Drop the single-effects with estimated prior of zero
-        # if (is.numeric(res$V)) {
-        #     include_idx <- which(res$V > prior_tol)
-        # } else {
-        #     include_idx <- 1 : nrow(res$alpha)
-        # }
-        include_idx <- 1 : nrow(res$alpha) 
-        
+        if (is.numeric(res$V)) {
+            include_idx <- which(res$V > prior_tol)
+        } else {
+            include_idx <- 1 : nrow(res$alpha)
+        }
+
         # Only consider variables in reported CS
         # "The following part is not what we do in the SuSiE paper."
         # "So by default prune_by_cs = FALSE means we do not run the"
@@ -473,7 +464,7 @@ gsusie_get_pip <- function(res, prune_by_cs = FALSE) {
         } else {
             res <- matrix(0, 1, ncol(res$alpha))
         }
-            
+
     }
     return(as.vector(1 - apply(1 - res, 2, prod)))
 }
@@ -486,7 +477,7 @@ n_in_CS_x <- function(x, coverage = 0.9) {
 }
 
 # Return binary vector indicating if each point is in CS.
-# x is a probability vector 
+# x is a probability vector
 #' @keywords internal
 in_CS_x <- function(x, coverage = 0.9) {
     n <- n_in_CS_x(x, coverage)
@@ -513,12 +504,12 @@ n_in_CS <- function(res, coverage = 0.9) {
     return(apply(res, 1, function(x) n_in_CS_x(x, coverage)))
 }
 
-# Subsample and compute min, mean, median and max abs corr. 
+# Subsample and compute min, mean, median and max abs corr.
 #
 #' @importFrom stats median
 get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
                        use_rfast) {
-    if (missing(use_rfast)) 
+    if (missing(use_rfast))
         use_rfast <- requireNamespace("Rfast", quietly = TRUE)
     if (use_rfast) {
         get_upper_tri <- Rfast::upper_tri
@@ -528,12 +519,12 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
         get_median    <- stats::median
     }
     if (length(pos) == 1)
-        return(c(1, 1, 1)) 
+        return(c(1, 1, 1))
     else{
         # Subsample the columns if necessary
-        if (length(pos) > n) 
+        if (length(pos) > n)
             pos <- sample(pos, n)
-        
+
         if (is.null(Xcorr)) {
             X_sub <- X[, pos]
             X_sub <- as.matrix(X_sub)
@@ -543,7 +534,7 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
         }
         if (squared)
             value <- value^2
-        
+
         return(c(min(value),
                  sum(value) / length(value),
                  get_median(value)))
@@ -554,7 +545,7 @@ get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
 #' @importFrom stats cor
 #' @keywords internal
 muffled_corr <- function(x) {
-    withCallingHandlers(cor(x), 
+    withCallingHandlers(cor(x),
             warning = function(w) {
                 if (grepl("the standard deviation is zero", w$message))
                     invokeRestart("muffleWarning")
@@ -579,77 +570,80 @@ muffled_cov2cor <- function(x) {
 is.symmetric_matrix <- function(x) {
     if (requireNamespace("Rfast", quietly = TRUE))
         return(Rfast::is.symmetric(x))
-    else 
+    else
        return(isSymmetric(x))
 }
 
-# Compute standard error for MLE regression coefficients.
-# (I do not follow the functions on
-# [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L543])
+# Compute standard error for MLE regression coefficients
+# under each simple regression model
+# Different from that on
+# [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557]
 #' @keywords internal
-calc_stderr <- function(X, logw2) {
-    V_mle_inv <- compute_XtWX(X, diag(as.numeric(exp(-logw2))))
-    sqrt(diag(solve(V_mle_inv)))
+calc_stderr <- function(X, weights) {
+  XtWX <- colSums(sweep(X * X, 1, weights, "*"))
+  shat2 <- 1 / XtWX
+  return(sqrt(shat2))
 }
 
 # Return residuals (No such thing!)
 
 # Slim the result of fitted gsusie model
-# Different from that on 
+# Different from that on
 # [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557]
 #' @keywords internal
 gsusie_slim <- function(res) {
-    list(alpha = res$alpha, niter = res$niter, mu = res$mu)
+    list(alpha = res$alpha, niter = res$niter, mu = res$mu, V = res$V)
 }
 
 # Prune single effects to given number L in susie/gsusie model subject.
 #' @keywords internal
-susie_prune_single_effects <- function(s, L = 0, V = NULL) {
-    num_effects <- nrow(s$alpha)
+gsusie_prune_single_effects <- function(gs, L = 0, V = NULL) {
+    num_effects <- nrow(gs$alpha)
     if (L == 0) {
         # Filtering will be based on non-zero elements in s$V.
-        if (!is.null(s$V)) 
-            L <- length(which(s$V > 0))
+        if (!is.null(gs$V))
+            L <- length(which(gs$V > 0))
         else
             L <- num_effects
     }
     if (L == num_effects) {
-        s$sets <- NULL
-        return(s)
+        gs$sets <- NULL
+        return(gs)
     }
-    if (!is.null(s$sets$cs_index)) 
-        effects_rank <- c(s$sets$cs_index, 
-                         setdiff(1:num_effects, s$sets$cs_index))
+    if (!is.null(gs$sets$cs_index))
+        effects_rank <- c(gs$sets$cs_index,
+                         setdiff(1:num_effects, gs$sets$cs_index))
     else
         effects_rank <- 1:num_effects
-    
+
     if (L > num_effects) {
         message(paste("Specified number of effects L =",L,
                   "is greater the number of effects",num_effects,
                   "in input (G-)SuSiE model. The (G-)SuSiE model will be expanded",
                   "to have",L,"effects."))
 
-        s$alpha <- rbind(s$alpha[effects_rank, ],
-                         matrix(1/ncol(s$alpha), L - num_effects, ncol(s$alpha)))
+        gs$alpha <- rbind(gs$alpha[effects_rank, ],
+                          matrix(1/ncol(gs$alpha), L - num_effects,
+                                 ncol(gs$alpha)))
         for (n in c("mu", "mu2", "lbf_variable")) {
-            if (!is.null(s[[n]])) 
-                s[[n]] <- rbind(s[[n]][effects_rank, ],
-                                matrix(0, L - num_effects, ncol(s[[n]])))
+            if (!is.null(gs[[n]]))
+                gs[[n]] <- rbind(gs[[n]][effects_rank, ],
+                                 matrix(0, L - num_effects, ncol(gs[[n]])))
         }
         # for (n in c("KL", "lbf")) {
         for (n in c("lbf")) {
-            if (!is.null(s[[n]]))
-                s[[n]] <- c(s[[n]][effects_rank], rep(NA, L - num_effects))
+            if (!is.null(gs[[n]]))
+                gs[[n]] <- c(gs[[n]][effects_rank], rep(NA, L - num_effects))
         }
         if (!is.null(V)) {
             if (length(V) > 1)
-                V[1 : num_effects] <- s$V[effects_rank]
+                V[1 : num_effects] <- gs$V[effects_rank]
             else V <- rep(V, L)
         }
-        s$V <- V
+        gs$V <- V
     }
-    s$sets <- NULL
-    return(s)
+    gs$sets <- NULL
+    return(gs)
 }
 
 #' @title Utility function to display warning messages as they occur
