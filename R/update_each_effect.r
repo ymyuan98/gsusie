@@ -15,11 +15,16 @@ update_each_effect <- function(X, y, gs, model,
                                estimate_prior_variance = FALSE,
                                estimate_prior_method = "optim",
                                check_null_threshold = 0,
-                               abnormal_proportion = 0.5
+                               abnormal_proportion = 0.5,
+                               robust_estimation = FALSE,
+                               robust_method = "simple",
+                               simple_outlier_fraction = 0.01,
+                               simple_outlier_thres = NULL,
+                               huber_tuning_k = NULL
                               ) {
 
-  if (!estimate_prior_variance)
-    estimate_prior_method = "none"
+  if (!estimate_prior_variance) estimate_prior_method = "none"
+  if (!robust_estimation)       robust_method = "none"
 
   if (abnormal_proportion <= 0 | abnormal_proportion >= 1)
       stop("Input abnormal proportion should be a value between 0 and 1.")
@@ -28,33 +33,53 @@ update_each_effect <- function(X, y, gs, model,
   gs$Xr <- compute_Xb(X, colSums(gs$alpha * gs$mu))
 
   # Update the pseudo-response
-  zz <- model$.zz(eeta, y)
+  zz <- model$.zz(gs$Xr, y)
   # check any abnormal points based on log-pseudo-responses
 
   # Update the overall log-pseudo-variance
   llogw2 <- model$.logw2(gs$Xr)
   weights <- exp(-llogw2)    ## May result in Inf or NAN!!
-  gs$abn_subjects <- check_abnormal_subjects(weights)
 
-  message(paste(quantiles(weights, c(0, 0.025, 0.975, 1)), collapse = " "))
-
-  gs$abn_subjects <- unique(append(gs$abn_subjects, which(weights > 1000)))
-  # sub_idx <- !((1 : nrow(X)) %in% gs$abn_subjects)
-
-  # Update the pseudo-response
-  zz <- model$.zz(gs$Xr, y)
   # check any abnormal points based on log-pseudo-responses
   # Update overall residuals
   rr <- zz - gs$Xr
+
+  gs$abn_subjects <- check_abnormal_subjects(weights)
+
+  message(paste(quantile(weights, c(0, 0.5, 0.99, 1)), collapse = " "))
+
+
+  # Robust estimation?!
+  if (robust_estimation) {
+    if (robust_method == "simple") {
+      # "simple" method bases on weights
+      adjunct_weights <- robust_adjunct_weights(weights,
+                              robust_method = "simple",
+                              simple_outlier_fraction = simple_outlier_fraction,
+                              simple_outlier_thres = simple_outlier_thres
+                              )
+    } else if (robust_method == "huber") {
+      # "huber" method bases on residual rr
+      adjunct_weights <- robust_adjunct_weights(rr,
+                                                robust_method = "huber",
+                                                huber_tuning_k = huber_tuning_k)
+    } else {
+      stop("Invalid option for robust_adjunct_weights method!")
+    }
+    weights <- sweep(weights, 1, adjunct_weights, "*")
+  }
+
+
   # Repeat for each effect to update
   L <- nrow(gs$alpha)
 
   if (L > 0) {
       # Remove all abnormal points
+      # where should I put this part?!
       if (length(gs$abn_subjects) > abnormal_proportion * nrow(X))
           stop("Too much abnormal subjects detected!")
-      X_sub      <- remove_abnormal(gs$abn_subjects, X)
-      rr_sub     <- remove_abnormal(gs$abn_subjects, rr)
+      X_sub       <- remove_abnormal(gs$abn_subjects, X)
+      rr_sub      <- remove_abnormal(gs$abn_subjects, rr)
       weights_sub <- remove_abnormal(gs$abn_subjects, weights)
 
       for (l in 1 : L) {
