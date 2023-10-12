@@ -93,7 +93,6 @@ X <- matrix(rnorm(nn * pp), ncol = pp)
 Eta <- sqrt(h2) * (-2*X[,1] + 0.5*X[,6]) + sqrt(1-h2) * rnorm(nn)
 expEta <- exp(Eta)
 y1 <- rpois(nn, expEta)
-# y <- y / sum(y) * 10
 y <- exp(scale(log1p(y1)))
 plot(y)
 
@@ -107,25 +106,36 @@ colnames(X) <- paste0("X", c(1:pp, 0))
 dim(X)
 length(y)
 
-
+## Threshold-removal
 res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
                      max_iters = 500, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
                      robust_estimation = T,
                      robust_method = "simple",
-                     simple_outlier_fraction = NULL,
-                     simple_outlier_thres = 1000,
+                     simple_outlier_fraction = 0.01,
+                     simple_outlier_thres = NULL,
                      verbose = T)
 
-# res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
-#                      max_iters = 500, tol = 1e-2,
-#                      coef_prior_variance = 1,
-#                      estimate_prior_method = "optim",
-#                      robust_estimation = T,
-#                      robust_method = "huber",
-#                      verbose = T)
+## Huber-weighting
+res_gs_huber <- gsusie(X, y, family = "poisson", maxL = 10,
+                     max_iters = 500, tol = 1e-2,
+                     coef_prior_variance = 1,
+                     estimate_prior_method = "optim",
+                     robust_estimation = T,
+                     robust_method = "huber",
+                     verbose = T)
 
+## bisquare-weighting
+res_gs_bisquare <- gsusie(X, y, family = "poisson", maxL = 10,
+                       max_iters = 500, tol = 1e-2,
+                       coef_prior_variance = 1,
+                       estimate_prior_method = "optim",
+                       robust_estimation = T,
+                       robust_method = "bisquare",
+                       verbose = T)
+
+## Non-robust-estimation
 res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
                      max_iters = 500, tol = 1e-2,
                      coef_prior_variance = 1,
@@ -140,6 +150,7 @@ summary.gsusie(res_gsusie)
 coefficients.gsusie(res_gsusie)
 res_gsusie$elbo[res_gsusie$niter]
 res_gsusie$V
+
 
 indices <- 1:res_gsusie$niter
 indices <- 300:500
