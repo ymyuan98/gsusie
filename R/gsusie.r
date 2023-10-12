@@ -111,11 +111,12 @@ gsusie <- function(X, y,
                   coef_prior_variance = 1,
                   check_null_threshold = 0,
                   prior_tol = 1e-9,
-                  robust_estimation = FALSE,
-                  robust_method = c("simple", "huber"),
+                  robust_estimation = TRUE,
+                  robust_method = c("huber", "simple", "bisquare"),
                   simple_outlier_fraction = 0.01,
                   simple_outlier_thres = NULL,
                   huber_tuning_k = NULL,
+                  bisquare_tuning_k = NULL,
                   null_weight = 0,
                   standardize = TRUE,
                   coverage = 0.95,
@@ -154,6 +155,7 @@ gsusie <- function(X, y,
       }
       X <- cbind(X, 0)
   }
+
   if (anyNA(X)) stop("Input X must not contain missing values")
   if (anyNA(y)) {
       if (na.rm) {
@@ -223,6 +225,7 @@ gsusie <- function(X, y,
   loglik_exact[1] <- loglik_apprx[1] <- -Inf
 
   for (tt in 1 : max_iters){
+
     if (track_fit) {
       tracking <- list()
       tracking[[tt]] <- gsusie_slim(gs_res)
@@ -236,8 +239,9 @@ gsusie <- function(X, y,
                              robust_estimation       = robust_estimation,
                              robust_method           = robust_method,
                              simple_outlier_fraction = simple_outlier_fraction,
-                             simple_outlier_thres = simple_outlier_thres,
-                             huber_tuning_k = huber_tuning_k
+                             simple_outlier_thres    = simple_outlier_thres,
+                             huber_tuning_k          = huber_tuning_k,
+                             bisquare_tuning_k       = bisquare_tuning_k
                              )
 
     eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
@@ -255,7 +259,7 @@ gsusie <- function(X, y,
       }
 
       cat("ELBO:", elbo[tt+1], "\n")
-      cat("Loglik:", loglik_exact[tt+1], "\n")
+      # cat("Loglik:", loglik_exact[tt+1], "\n")
     }
 
     if (abs(elbo[tt + 1] - elbo[tt]) < tol) {
@@ -278,6 +282,7 @@ gsusie <- function(X, y,
                     max_iters, "iterations"))
       gs$converged <- FALSE
   }
+
   if (track_fit) gs$trace <- tracking
   gs$abn_subjects <- unique(sort(gs$abn_subjects))
 
@@ -289,22 +294,17 @@ gsusie <- function(X, y,
       gs$pip <- gsusie_get_pip(gs, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
 
+  # Names
   if (!is.null(colnames(X))) {
     variable_names <- colnames(X)
-    if (!is.null(null_weight)) {
-      variable_names[length(variable_names)] <- "null"
-      names(gs$pip) <- variable_names[-p]
-    } else {
-      names(gs$pip) <- variable_names
-    }
   } else {
     variable_names <- paste0("X", 1:p)
-    if (!is.null(null_weight)) {  ## Why it is here?
-      variable_names[length(variable_names)] <- "null"
-      names(gs$pip) <- variable_names[-p]
-    } else {
-      names(gs$pip) <- variable_names
-    }
+  }
+  if (!is.null(null_weight)) {
+    variable_names[length(variable_names)] <- "null"
+    names(gs$pip) <- variable_names[-p]
+  } else {
+    names(gs$pip) <- variable_names
   }
   colnames(gs$alpha) <- variable_names
   colnames(gs$mu)    <- variable_names

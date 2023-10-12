@@ -20,7 +20,8 @@ update_each_effect <- function(X, y, gs, model,
                                robust_method = "simple",
                                simple_outlier_fraction = 0.01,
                                simple_outlier_thres = NULL,
-                               huber_tuning_k = NULL
+                               huber_tuning_k = NULL,
+                               bisquare_tuning_k = NULL
                               ) {
 
   if (!estimate_prior_variance) estimate_prior_method = "none"
@@ -34,39 +35,41 @@ update_each_effect <- function(X, y, gs, model,
 
   # Update the pseudo-response
   zz <- model$.zz(gs$Xr, y)
-  # check any abnormal points based on log-pseudo-responses
 
   # Update the overall log-pseudo-variance
   llogw2 <- model$.logw2(gs$Xr)
   weights <- exp(-llogw2)    ## May result in Inf or NAN!!
+  # check any abnormal points based on log-pseudo-variance
+  gs$abn_subjects <- check_abnormal_subjects(weights)
 
-  # check any abnormal points based on log-pseudo-responses
   # Update overall residuals
   rr <- zz - gs$Xr
 
-  gs$abn_subjects <- check_abnormal_subjects(weights)
-
-  message(paste(quantile(weights, c(0, 0.5, 0.99, 1)), collapse = " "))
+  # message(paste(quantile(weights, c(0, 0.5, 0.99, 1)), collapse = " "))
 
 
-  # Robust estimation?!
+  # Robust estimation
   if (robust_estimation) {
     if (robust_method == "simple") {
       # "simple" method bases on weights
-      adjunct_weights <- robust_adjunct_weights(weights,
+      imp_weights <- robust_importance_weights(weights,
                               robust_method = "simple",
                               simple_outlier_fraction = simple_outlier_fraction,
-                              simple_outlier_thres = simple_outlier_thres
-                              )
+                              simple_outlier_thres = simple_outlier_thres)
     } else if (robust_method == "huber") {
       # "huber" method bases on residual rr
-      adjunct_weights <- robust_adjunct_weights(rr,
-                                                robust_method = "huber",
-                                                huber_tuning_k = huber_tuning_k)
+      imp_weights <- robust_importance_weights(rr,
+                              robust_method = "huber",
+                              huber_tuning_k = huber_tuning_k)
+    } else if (robust_method == "bisquare") {
+      # "bisquare" method bases on residual rr
+      imp_weights <- robust_importance_weights(rr,
+                              robust_method = "bisquare",
+                              bisquare_tuning_k = bisquare_tuning_k)
     } else {
-      stop("Invalid option for robust_adjunct_weights method!")
+      stop("Invalid option for robust_importance_weights method!")
     }
-    weights <- sweep(weights, 1, adjunct_weights, "*")
+    weights <- sweep(weights, 1, imp_weights, "*")
   }
 
 

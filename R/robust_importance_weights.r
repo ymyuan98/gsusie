@@ -25,71 +25,85 @@
 #' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
 #' absolute values as outliers
 #'
-#' @param huber_tuning_k The tuning parameter in the Huber weight function.
-#' By default, \eqn{huber_tuning_k = 1.345*sd(values)}
+#' @param huber_tuning_k tuning parameter in the Huber weight function.
+#' By default, \eqn{\text{huber_tuning_k} = 1.345 \times \hat{\sigma}},
+#' where \eqn{\hat{\sigma} = \operatorname{MAR}/0.6745} and
+#' \eqn{\operatorname{MAR}} is the median absolute residual.
+#'
+#' @param bisquare_tuning_k tuning parameter in the Bisquare weight function.
+#' By default, \eqn{\text{bisquare_tuning_k} = 4.685 \times \hat{\sigma}}
+#' and \eqn{\hat{\sigma}} is estimated using the same equation above.
 #'
 #'
-#' @return adjuct_weights The adjunct weights.
+#' @return {imp_weights} The imp weights.
 #' If a subject is to be removed from the current iteration, its adjuct_weights
 #' is 0.
 #'
 #' @keywords internal
 #'
 
-robust_adjunct_weights <- function(
+robust_importance_weights <- function(
     values,
-    robust_method = c("none", "simple", "huber"),
+    robust_method = c("none", "huber", "simple", "bisquare"),
     simple_outlier_fraction = 0.01,
     simple_outlier_thres = NULL,
-    huber_tuning_k = NULL
+    huber_tuning_k = NULL,
+    bisquare_tuning_k = NULL
 ){
 
   robust_method <- match.arg(robust_method)
 
   if (robust_method == "none") {
-    adjunct_weights <- rep(1, times = length(values))
+    imp_weights <- rep(1, times = length(values))
 
-  } else if (robust_method == "simple") {
-
+  }
+  else if (robust_method == "simple") {
     if (!is.null(simple_outlier_fraction)) {
-      message("fraction", simple_outlier_fraction)
-
+      message(paste("fraction", simple_outlier_fraction))
       if (simple_outlier_fraction <= 0 | simple_outlier_fraction >= 1)
-        stop("simple_outlier_fraction should be a value between 0 and 1")
-
+        {stop("simple_outlier_fraction should be a value between 0 and 1")}
       thres <- quantile(values, 1 - simple_outlier_fraction)
-      adjunct_weights <- 1 * (values <= thres)
-
-    } else if(!is.null(simple_outlier_thres)) { # is.null(simple_outlier_fraction)
+      imp_weights <- 1 * (values <= thres)
+    }
+    else if(!is.null(simple_outlier_thres)) { # is.null(simple_outlier_fraction)
       message(paste("fixed threshold", simple_outlier_thres))
-
       thres <- simple_outlier_thres
-      adjunct_weights <- 1 * (values <= thres)
+      imp_weights <- 1 * (values <= thres)
 
-    } else { # is.null(simple_outlier_fraction) && is.null(simple_outlier_thres)
+    }
+    else { # is.null(simple_outlier_fraction) && is.null(simple_outlier_thres)
       stop("Please specify a threshold to simple-robust estimation!")
     }
-
-
-  } else {
+  }
+  else if (robust_method == "huber"){
     message("huber weighting")
-
     if (is.null(huber_tuning_k)) {
-      huber_tuning_k <- 1.345 * sd(values)  # By default.
+      huber_tuning_k <- 1.345 * median(abs(values)) / 0.6745
     }
-    adjunct_weights <- huber_weight_(values, huber_tuning_k)
+    imp_weights <- huber_weight_(values, huber_tuning_k)
+
+  } else if (robust_method == "bisquare") {
+    message("bisquare weighting")
+    if (is.null(bisquare_tuning_k)) {
+      bisquare_tuning_k <- 4.685 * median(abs(values)) / 0.6745
+    }
+    imp_weights <- bisquare_weight_(values, bisquare_tuning_k)
+
   }
 
-  return(adjunct_weights)
+  return(imp_weights)
 
 }
 
-huber_weight_ <- function(e, k) {
-  out <- ifelse(abs(e) <= k, 1, k / abs(e))
+huber_weight_ <- function(r, k) {
+  out <- ifelse(abs(r) <= k, 1, k / abs(r))
   return(out)
 }
 
-
+bisquare_weight_ <- function(r, k) {
+  out <- ifelse(abs(r) <= k, (1 - (r/k)^2)^2, 0)
+  return(out)
+}
 
 
 

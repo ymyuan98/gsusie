@@ -47,33 +47,3 @@ init_setup <- function(n, p, L, family,
   return(gs)
 }
 
-
-init_finalize <- function(gs, X = NULL, Xr = NULL) {
-    # if (length(gs$V) == 1)
-    #     gs$V = rep(gs$V, nrow(gs$alpha))   ###(?)  How to initialize V?!
-
-    # if (nrow(gs$alpha) != length(gs$V))
-    #     stop("Input prior variance must have length of nrow of alpha in ",
-    #         "input object")
-
-    # Check prior variance
-    # if (!is.numeric(gs$V))
-    #     stop("Input prior variance must be numeric")
-    # if (!all(gs$V >= 0))
-    #     stop("Prior variance must be non-negative")
-    if (!all(dim(gs$mu) == dim(gs$mu2)))
-        stop("Dimensions of mu and mu2 in input object do not match")
-    if (!all(dim(gs$mu) == dim(gs$alpha)))
-        stop("Dimensions of mu and alpha in input object do not match")
-
-    # Update Xr: linear predictor.
-    if (!missing(Xr))
-        gs$Xr <- Xr
-    if (!missing(X))
-        gs$Xr <- compute_Xb(X, colSums(gs$mu * gs$alpha))
-
-    # Reset KL and lbf
-    gs$lbf <- rep(as.numeric(NA), nrow(gs$alpha))
-    class(gs) <- "gsusie"
-    return(gs)
-}
