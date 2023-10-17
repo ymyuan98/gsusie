@@ -1,3 +1,5 @@
+############
+## Simulations for logistic regression models
 
 ## source functions
 # library(tidyverse)
@@ -78,12 +80,19 @@ pp <- 1000
 h2 <- 0.5
 
 .save.path <- "./tests/"
-.filenames <- gen_filenames(nn, pp, h2, "poisson")
+.filenames <- gen_filenames(nn, pp, h2, "logistic")
 
 if.needed(.save.path %&% .filenames, {
   set.seed(Sys.Date())
 
   verbose <- TRUE
+
+  expit <- function(eta) {
+    res <- ifelse(eta > 0,
+                  1 / (1 + exp(-eta)),
+                  exp(eta) / (1 + exp(eta)))
+    return(res)
+  }
 
   # Precision (PPV)
   PPV <- as.data.frame(matrix(nrow = n_trials, ncol = 6))
@@ -123,8 +132,7 @@ if.needed(.save.path %&% .filenames, {
 
     Eta <- sqrt(h2) * (X[ ,effect_idx, drop = F] %*% as.matrix(bb)) +
       sqrt(1-h2) * rnorm(nn)
-    y1 <- rpois(nn, exp(Eta))
-    y  <- exp(scale(log1p(y1)))  # scale the response
+    y <- rbinom(nn, 1, expit(Eta))  # binomial
     X <- cbind(X, 1)  # Intercept is always put at last
     colnames(X) <- paste0("X", c(1:pp, 0))
 
@@ -133,30 +141,35 @@ if.needed(.save.path %&% .filenames, {
 
     # Non-robust estimation (vanilla)
     print("gs-vanilla")
-    res_gs_vn <- gsusie(X, y, family = "poisson",
+    res_gs_vn2 <- gsusie(X, y, family = "binomial",
                         max_iters = 200,
+                        estimate_prior_variance = T,
                         estimate_prior_method = "optim",
-                        robust_estimation = F)
+                        robust_estimation = F,
+                        verbose = T)
 
     # Huber weighting
     print("gs-huber")
-    res_gs_hb <- gsusie(X, y, family = "poisson",
+    res_gs_hb <- gsusie(X, y, family = "binomial",
                         max_iters = 200,
+                        estimate_prior_variance = F,
                         estimate_prior_method = "optim",
                         robust_estimation = T,
-                        robust_method = "huber")
+                        robust_method = "huber",
+                        verbose = T)
 
     # Bisquare weighting
     print("gs-bisquare")
-    res_gs_bs <- gsusie(X, y, family = "poisson",
+    res_gs_bs <- gsusie(X, y, family = "binomial",
                         max_iters = 200,
                         estimate_prior_method = "optim",
                         robust_estimation = T,
-                        robust_method = "bisquare")
+                        robust_method = "bisquare",
+                        verbose = T)
 
     # Weight dropped by fractions - 0.01
     print("gs-fraction")
-    res_gs_fc1 <- gsusie(X, y, family = "poisson",
+    res_gs_fc1 <- gsusie(X, y, family = "binomial",
                          max_iters = 200,
                          estimate_prior_method = "optim",
                          robust_estimation = T,
@@ -166,7 +179,7 @@ if.needed(.save.path %&% .filenames, {
                          verbose = T)
 
     # GLMNET
-    res_glmnet <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson")
+    res_glmnet <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial")
 
     ## convergeFlags
     convergeFlags$gs_vn[tt]  <- res_gs_vn$converged
