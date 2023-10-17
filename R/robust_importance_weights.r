@@ -59,14 +59,15 @@ robust_importance_weights <- function(
   }
   else if (robust_method == "simple") {
     if (!is.null(simple_outlier_fraction)) {
-      message(paste("fraction", simple_outlier_fraction))
+      # message(paste("fraction", simple_outlier_fraction))
       if (simple_outlier_fraction <= 0 | simple_outlier_fraction >= 1)
         {stop("simple_outlier_fraction should be a value between 0 and 1")}
       thres <- quantile(values, 1 - simple_outlier_fraction)
       imp_weights <- 1 * (values <= thres)
+      message(paste(which(values > thres), collapse = " "))
     }
     else if(!is.null(simple_outlier_thres)) { # is.null(simple_outlier_fraction)
-      message(paste("fixed threshold", simple_outlier_thres))
+      # message(paste("fixed threshold", simple_outlier_thres))
       thres <- simple_outlier_thres
       imp_weights <- 1 * (values <= thres)
 
@@ -76,14 +77,14 @@ robust_importance_weights <- function(
     }
   }
   else if (robust_method == "huber"){
-    message("huber weighting")
+    # message("huber weighting")
     if (is.null(huber_tuning_k)) {
       huber_tuning_k <- 1.345 * median(abs(values)) / 0.6745
     }
     imp_weights <- huber_weight_(values, huber_tuning_k)
 
   } else if (robust_method == "bisquare") {
-    message("bisquare weighting")
+    # message("bisquare weighting")
     if (is.null(bisquare_tuning_k)) {
       bisquare_tuning_k <- 4.685 * median(abs(values)) / 0.6745
     }
