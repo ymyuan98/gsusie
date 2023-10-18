@@ -87,35 +87,70 @@ library(MASS)
 ## Synthesize data
 nn <- 500
 pp <- 1000
-X <- matrix(rnorm(nn * pp), ncol = pp)
+h2 <- 0.8
 
-# Eta <- -2 * X[, 1, drop = F]
-Eta <- -2 * X[,1] + 0.5 * X[,6]
+X <- matrix(rnorm(nn * pp), ncol = pp)
+Eta <- sqrt(h2) * (-2*X[,1] + 0.5*X[,6]) + sqrt(1-h2) * rnorm(nn)
 expEta <- exp(Eta)
 y1 <- rpois(nn, expEta)
-# y <- y / sum(y) * 10
 y <- exp(scale(log1p(y1)))
+plot(y)
 
 # res_susie <- susie(X, y, L = 10)
-# summary(res_susie)
-
+# summary(res_susie)s
 
 ## our method
-X <- cbind(1, X)
-colnames(X) <- paste0("X", 0:pp)
-# X <- X[, -1]
+X <- cbind(X, 1)
+colnames(X) <- paste0("X", c(1:pp, 0))
+
+dim(X)
+length(y)
+
+## Threshold-removal
 res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
                      max_iters = 500, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
+                     robust_estimation = T,
+                     robust_method = "simple",
+                     simple_outlier_fraction = 0.01,
+                     simple_outlier_thres = NULL,
                      verbose = T)
+
+## Huber-weighting
+res_gs_huber <- gsusie(X, y, family = "poisson", maxL = 10,
+                     max_iters = 500, tol = 1e-2,
+                     coef_prior_variance = 1,
+                     estimate_prior_method = "optim",
+                     robust_estimation = T,
+                     robust_method = "huber",
+                     verbose = T)
+
+## bisquare-weighting
+res_gs_bisquare <- gsusie(X, y, family = "poisson", maxL = 10,
+                       max_iters = 500, tol = 1e-2,
+                       coef_prior_variance = 1,
+                       estimate_prior_method = "optim",
+                       robust_estimation = T,
+                       robust_method = "bisquare",
+                       verbose = T)
+
+## Non-robust-estimation
+res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
+                     max_iters = 500, tol = 1e-2,
+                     coef_prior_variance = 1,
+                     estimate_prior_method = "optim",
+                     robust_estimation = F,
+                     verbose = T)
+
 # res_gsusie$sets
 # round(res_gsusie$alpha, digits = 3)
-plot(res_gsusie$pip)
+plot(res_gsusie$pip, ylab = "PIP")
 summary.gsusie(res_gsusie)
 coefficients.gsusie(res_gsusie)
 res_gsusie$elbo[res_gsusie$niter]
 res_gsusie$V
+
 
 indices <- 1:res_gsusie$niter
 indices <- 300:500
@@ -133,7 +168,6 @@ coefficients.gsusie(res_susie)
 nn <- 100
 pp <- 20
 XX <- matrix(rnorm(nn * pp), ncol = pp)
-# yy <- rbinom(nn, 1, expit(XX[,1]))
 yy <- rpois(nn, exp(XX[,1]))
 res1 <- glm(yy ~ XX[, 2] + XX[, 3], family = "poisson")
 summary(res1)

@@ -92,6 +92,14 @@
 #' If the number of detected abnormal subjects exceeds
 #' \eqn{abnormal_proportion * nrow(X)}, stop fitting the model.
 #'
+#' @param robust_estimation If \code{robust_estimation=TRUE},
+#' robust estimation method is applied on the coefficient estimation.
+#'
+#' @param robust_method If \code{robust_est_method = "simple"},
+#' then the 1% observations with the highest weights (i.e. inverse of
+#' pseudo-variance) during coefficient estimation in each iteration.
+#' If \code{robust_method = "huber"}, huber weightings are additionally
+#' multiplied to the original weights in each iteration. (TBC?!)
 
 
 gsusie <- function(X, y,
@@ -103,20 +111,26 @@ gsusie <- function(X, y,
                   coef_prior_variance = 1,
                   check_null_threshold = 0,
                   prior_tol = 1e-9,
+                  robust_estimation = FALSE,
+                  robust_method = c("huber", "simple", "bisquare"),
+                  simple_outlier_fraction = 0.01,
+                  simple_outlier_thres = NULL,
+                  huber_tuning_k = NULL,
+                  bisquare_tuning_k = NULL,
                   null_weight = 0,
                   standardize = TRUE,
                   coverage = 0.95,
                   min_abs_corr = 0.5,
-                  max_iters = 500,
+                  max_iters = 100,
                   na.rm = FALSE,
                   tol = 1e-2,
                   n_purity = 100,
-                  # sensitive_tol = 50,  ##!! Sensitivity check!
                   abnormal_proportion = 0.5,
                   track_fit = FALSE,
                   verbose = FALSE) {
 
   estimate_prior_method = match.arg(estimate_prior_method)
+  robust_method = match.arg(robust_method)
 
   # Check input X
   if (!(is.double(X) & is.matrix(X)) & !inherits(X, "CsparseMatrix") &
@@ -124,7 +138,9 @@ gsusie <- function(X, y,
           stop("Input X must be a double-precision matrix, or a sparse matrix, or ",
               "a trend filtering matrix")
       }
+
   if (is.numeric(null_weight) && null_weight == 0) null_weight <- NULL
+
   if (!is.null(null_weight) && is.null(attr(X, "matrix.type"))) {
       if (!is.numeric(null_weight))
           stop("Null weight must be numeric")
@@ -139,6 +155,7 @@ gsusie <- function(X, y,
       }
       X <- cbind(X, 0)
   }
+
   if (anyNA(X)) stop("Input X must not contain missing values")
   if (anyNA(y)) {
       if (na.rm) {
@@ -171,7 +188,7 @@ gsusie <- function(X, y,
 
   # Check GLM family
   model <- list()
-  model$type <- match.arg(family, c("binomial", "poisson"))
+  model$type <- match.arg(family, c("binomial", "poisson"))  # weighted LeastSquare?! ADD THIS OPTION!
   switch(model$type,
         "binomial" =
         {
@@ -208,21 +225,24 @@ gsusie <- function(X, y,
   loglik_exact[1] <- loglik_apprx[1] <- -Inf
 
   for (tt in 1 : max_iters){
+
     if (track_fit) {
       tracking <- list()
       tracking[[tt]] <- gsusie_slim(gs_res)
     }
 
-
-    if(verbose) {
-      print(tt)
-    }
-
     gs <- update_each_effect(X, y, gs, model,
                              estimate_prior_variance = estimate_prior_variance,
-                             estimate_prior_method = estimate_prior_method,
-                             check_null_threshold = check_null_threshold,
-                             abnormal_proportion = abnormal_proportion)
+                             estimate_prior_method   = estimate_prior_method,
+                             check_null_threshold    = check_null_threshold,
+                             abnormal_proportion     = abnormal_proportion,
+                             robust_estimation       = robust_estimation,
+                             robust_method           = robust_method,
+                             simple_outlier_fraction = simple_outlier_fraction,
+                             simple_outlier_thres    = simple_outlier_thres,
+                             huber_tuning_k          = huber_tuning_k,
+                             bisquare_tuning_k       = bisquare_tuning_k
+                             )
 
     eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
     loglik_exact[tt+1] <- sum(model$.compute_loglik_exact(eta_cur, y))
@@ -230,13 +250,16 @@ gsusie <- function(X, y,
     elbo[tt+1] <- get_objective(X, y, gs, model)
 
     if (verbose) {
+      print(tt)
+
       if (!is.null(gs$abn_subjects)) {
         cat("Abnormal subjects in this round: \n")
         print(gs$abn_subjects)
         print(paste0("Number of abnormal points: ", length(gs$abn_subjects)))
       }
+
       cat("ELBO:", elbo[tt+1], "\n")
-      cat("Loglik:", loglik_exact[tt+1], "\n")
+      # cat("Loglik:", loglik_exact[tt+1], "\n")
     }
 
     if (abs(elbo[tt + 1] - elbo[tt]) < tol) {
@@ -259,6 +282,7 @@ gsusie <- function(X, y,
                     max_iters, "iterations"))
       gs$converged <- FALSE
   }
+
   if (track_fit) gs$trace <- tracking
   gs$abn_subjects <- unique(sort(gs$abn_subjects))
 
@@ -270,22 +294,17 @@ gsusie <- function(X, y,
       gs$pip <- gsusie_get_pip(gs, prune_by_cs = FALSE, prior_tol = prior_tol)
   }
 
+  # Names
   if (!is.null(colnames(X))) {
     variable_names <- colnames(X)
-    if (!is.null(null_weight)) {
-      variable_names[length(variable_names)] <- "null"
-      names(gs$pip) <- variable_names[-p]
-    } else {
-      names(gs$pip) <- variable_names
-    }
   } else {
     variable_names <- paste0("X", 1:p)
-    if (!is.null(null_weight)) {  ## Why it is here?
-      variable_names[length(variable_names)] <- "null"
-      names(gs$pip) <- variable_names[-p]
-    } else {
-      names(gs$pip) <- variable_names
-    }
+  }
+  if (!is.null(null_weight)) {
+    variable_names[length(variable_names)] <- "null"
+    names(gs$pip) <- variable_names[-p]
+  } else {
+    names(gs$pip) <- variable_names
   }
   colnames(gs$alpha) <- variable_names
   colnames(gs$mu)    <- variable_names
