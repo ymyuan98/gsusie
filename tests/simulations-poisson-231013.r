@@ -1,10 +1,8 @@
-############
-## Simulations for logistic regression models
 
 ## source functions
 .libPaths("~/projects/Rlibs/")
 library(glmnet)
-library(coefplot)
+# library(coefplot)
 library(readr)
 library(PRROC)
 
@@ -36,7 +34,7 @@ get_selected_vars <- function(res,
                               gs_included_X0 = TRUE,
                               glmnet_top_n = NULL)
 {
-  if (is.null(res)) {  # if an error raised...
+  if (is.null(res)) {  # if an error is raised...
     return(NULL)
   }
 
@@ -49,10 +47,11 @@ get_selected_vars <- function(res,
   }
 
   if (class(res) == "cv.glmnet") {
+
     out <- coef(res, s = "lambda.min")[-1]
 
-    if (is.null(glmnet_top_n)) glmnet_top_n <- length(out)
-    out <- order(abs(out), decreasing = T)[1:glmnet_top_n]
+   if (is.null(glmnet_top_n)) glmnet_top_n <- length(out)
+   out <- order(abs(out), decreasing = T)[1:glmnet_top_n]
   }
 
   return(out)
@@ -87,27 +86,18 @@ h2 <- as.numeric(args[3])
 # pp <- 1000
 # h2 <- 0.5
 
-model <- "logistic"
+model <- "poisson"
 .result.dir <- "~/projects/gsusie/results/synthetic-" %&% Sys.Date() %&% "-" %&% model %&% "/"
 if (!dir.exists(.result.dir)) {
   dir.create(.result.dir, recursive=TRUE, showWarnings=FALSE)
 }
 
 .filenames <- gen_filenames(nn, pp, h2, model, Sys.Date())
-## By careful! Sys.Date() may change!
 
 if.needed(.result.dir %&% .filenames, {
 
-  verbose <- FALSE
+  verbose <- TRUE
 
-  expit <- function(eta) {
-    res <- ifelse(eta > 0,
-                  1 / (1 + exp(-eta)),
-                  exp(eta) / (1 + exp(eta)))
-    return(res)
-  }
-
-  ######################
   # methods-names
   ## Name the columns (methods):
   ## vn: vanilla (non-robust)
@@ -147,11 +137,10 @@ if.needed(.result.dir %&% .filenames, {
 
 
   for (tt in 1 : n_trials) {
-
-    set.seed(20232018 + tt)
+    set.seed(20231020+tt)
 
     if (verbose) {
-      # if (tt %% 10 == 0)
+      if (tt %% 10 == 0)
         cat("Running the ", tt, "-th trial... \n")
     }
 
@@ -165,7 +154,8 @@ if.needed(.result.dir %&% .filenames, {
 
     Eta <- sqrt(h2) * (X[ ,effect_idx, drop = F] %*% as.matrix(bb)) +
       sqrt(1-h2) * rnorm(nn)
-    y <- rbinom(nn, 1, expit(Eta))  # binomial
+    y1 <- rpois(nn, exp(Eta))
+    y  <- exp(scale(log1p(y1)))  # scale the response
     X <- cbind(X, 1)  # Intercept is always put at last
     colnames(X) <- paste0("X", c(1:pp, 0))
 
@@ -173,30 +163,29 @@ if.needed(.result.dir %&% .filenames, {
     ## Method comparison
 
     # Non-robust estimation (vanilla)
-    # print("gs-vanilla")
-    res_gs_vn <- gsusie(X, y, family = "binomial",
-                        estimate_prior_variance = T,
-                        estimate_prior_method = "optim",
-                        robust_estimation = F)
+    tryCatch({
+      res_gs_vn <- gsusie(X, y, family = "poisson",
+                          estimate_prior_method = "optim",
+                          robust_estimation = F)
+    }, error = function(err) {
+      print(paste("Error in the", tt, "trial: ", err))
+      res_gs_vn <- NULL
+    })
 
     # Huber weighting
-    # print("gs-huber")
-    res_gs_hb <- gsusie(X, y, family = "binomial",
-                        estimate_prior_variance = F,
+    res_gs_hb <- gsusie(X, y, family = "poisson",
                         estimate_prior_method = "optim",
                         robust_estimation = T,
                         robust_method = "huber")
 
     # Bisquare weighting
-    # print("gs-bisquare")
-    res_gs_bs <- gsusie(X, y, family = "binomial",
+    res_gs_bs <- gsusie(X, y, family = "poisson",
                         estimate_prior_method = "optim",
                         robust_estimation = T,
                         robust_method = "bisquare")
 
     # Weight dropped by fractions - 0.5
-    # print("gs-fraction")
-    res_gs_fc50 <- gsusie(X, y, family = "binomial",
+    res_gs_fc50 <- gsusie(X, y, family = "poisson",
                          estimate_prior_method = "optim",
                          robust_estimation = T,
                          robust_method = "simple",
@@ -205,8 +194,7 @@ if.needed(.result.dir %&% .filenames, {
                          abnormal_proportion = 0.6)
 
     # Weight dropped by fractions - 0.05
-    # print("gs-fraction")
-    res_gs_fc5 <- gsusie(X, y, family = "binomial",
+    res_gs_fc5 <- gsusie(X, y, family = "poisson",
                          estimate_prior_method = "optim",
                          robust_estimation = T,
                          robust_method = "simple",
@@ -214,8 +202,7 @@ if.needed(.result.dir %&% .filenames, {
                          simple_outlier_thres = NULL)
 
     # Weight dropped by fractions - 0.01
-    # print("gs-fraction")
-    res_gs_fc1 <- gsusie(X, y, family = "binomial",
+    res_gs_fc1 <- gsusie(X, y, family = "poisson",
                          estimate_prior_method = "optim",
                          robust_estimation = T,
                          robust_method = "simple",
@@ -224,11 +211,11 @@ if.needed(.result.dir %&% .filenames, {
 
     ### Comparison: GLMNET
     # Lasso
-    res_la <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 1)
+    res_la <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 1)
     # Ridge regression
-    res_rg <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 0)
+    res_rg <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 0)
     # Elastic net: alpha=0.5
-    res_en <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 0.5)
+    res_en <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 0.5)
 
 
     #####################################
@@ -316,11 +303,11 @@ if.needed(.result.dir %&% .filenames, {
     AUPRC$gs_bs[tt] <- pr.curve(scores.class0 = res_gs_bs$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
     AUPRC$gs_fc50[tt] <- pr.curve(scores.class0 = res_gs_fc50$pip[-ncol(X)],
-                                  weights.class0 = labs)$auc.integral
+                                weights.class0 = labs)$auc.integral
     AUPRC$gs_fc5[tt] <- pr.curve(scores.class0 = res_gs_fc5$pip[-ncol(X)],
-                                 weights.class0 = labs)$auc.integral
+                                weights.class0 = labs)$auc.integral
     AUPRC$gs_fc1[tt] <- pr.curve(scores.class0 = res_gs_fc1$pip[-ncol(X)],
-                                 weights.class0 = labs)$auc.integral
+                                weights.class0 = labs)$auc.integral
     ## remember to remove the intercept in the fitted GLMNET result!
     la_coefs <- as.numeric(coef(res_la, s = "lambda.min"))[-1]
     AUPRC$la[tt] <- pr.curve(scores.class0 = abs(la_coefs),
