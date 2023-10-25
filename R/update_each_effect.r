@@ -45,8 +45,6 @@ update_each_effect <- function(X, y, gs, model,
   # Update overall residuals
   rr <- zz - gs$Xr
 
-  # message(paste(quantile(weights, c(0, 0.5, 0.99, 1)), collapse = " "))
-
 
   # Robust estimation
   if (robust_estimation) {
