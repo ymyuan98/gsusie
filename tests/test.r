@@ -67,7 +67,7 @@ coefficients.gsusie(res_s)
 files_path <- "./R/"
 filenames <- list.files(path = files_path)
 
-filenames <- filenames[filenames != "gsusie.r"]  # remove the "test.r"
+# filenames <- filenames[filenames != "gsusie.r"]  # remove the "test.r"
 
 for (i in 1 : length(filenames)) {
   source(files_path %&% filenames[i])
@@ -87,7 +87,7 @@ library(MASS)
 ## Synthesize data
 nn <- 500
 pp <- 1000
-h2 <- 0.8
+h2 <- 0.5
 
 X <- matrix(rnorm(nn * pp), ncol = pp)
 Eta <- sqrt(h2) * (-2*X[,1] + 0.5*X[,6]) + sqrt(1-h2) * rnorm(nn)
@@ -119,7 +119,7 @@ res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
 
 ## Huber-weighting
 res_gs_huber <- gsusie(X, y, family = "poisson", maxL = 10,
-                     max_iters = 500, tol = 1e-2,
+                     max_iters = 100, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
                      robust_estimation = T,
@@ -137,11 +137,10 @@ res_gs_bisquare <- gsusie(X, y, family = "poisson", maxL = 10,
 
 ## Non-robust-estimation
 res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
-                     max_iters = 500, tol = 1e-2,
+                     max_iters = 100, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
-                     robust_estimation = F,
-                     verbose = T)
+                     robust_estimation = F)
 
 # res_gsusie$sets
 # round(res_gsusie$alpha, digits = 3)
@@ -173,3 +172,74 @@ res1 <- glm(yy ~ XX[, 2] + XX[, 3], family = "poisson")
 summary(res1)
 res2 <- glm(yy ~ -1 + XX[, 9] , family = "poisson")
 summary(res2)
+
+
+##############################################################################
+.result.dir <- "./tests/"
+.filenames <- "poisson-n500-p1000-h5.rds"
+RES <- readRDS(.result.dir %&% .filenames)
+
+PPV <- RES$Precision
+TPR <- RES$Recall
+NumVs <- RES$NumVs
+convergeFlags <- RES$convergeFlags
+ELBO <- RES$ELBO
+
+
+
+################################################################################
+library(tidyverse)
+
+set.seed(20231020)
+
+h2 <- 0.5
+## Generate data
+nn <- 500
+pp <- 1000
+X <- matrix(rnorm(nn * pp), ncol = pp)
+n_effect_vars <- 5  ## number of effective variables
+effect_idx <- sort(sample(1 : pp, size = n_effect_vars))
+bb <- rnorm(n_effect_vars)
+# data.frame(variable = paste0("X", effect_idx), effect_size = bb)
+
+Eta <- sqrt(h2) * (X[ ,effect_idx, drop = F] %*% as.matrix(bb)) +
+  sqrt(1-h2) * rnorm(nn)
+y1 <- rpois(nn, exp(Eta))
+y  <- exp(scale(log1p(y1)))  # scale the response
+
+
+X <- cbind(X, 1)  # Intercept is always put at last
+colnames(X) <- paste0("X", c(1:pp, 0))
+
+plot(y)
+
+
+
+res_gs_hbS <- gsusie(X, y, family = "poisson",
+                     robust_estimation = T,
+                     robust_method = "huber",
+                     huber_tuning_k = "S")
+summary(res_gs_hbS)
+gsusie_coefficients(res_gs_hbS)
+
+res_gs_hbM <- gsusie(X, y, family = "poisson",
+                     robust_estimation = T,
+                     robust_method = "huber",
+                     huber_tuning_k = "M")
+summary(res_gs_hbM)
+gsusie_coefficients(res_gs_hbM)
+
+
+res_gs_hbvSD <- gsusie(X, y, family = "poisson",
+                       robust_estimation = T,
+                       robust_method = "huber",
+                       huber_tuning_k = "vSD")
+summary(res_gs_hbvSD)
+gsusie_coefficients(res_gs_hbvSD)
+
+res_gs_hbvMd <- gsusie(X, y, family = "poisson",
+                       robust_estimation = T,
+                       robust_method = "huber",
+                       huber_tuning_k = "vMd")
+summary(res_gs_hbvMd)
+gsusie_coefficients(res_gs_hbvMd)
