@@ -113,7 +113,7 @@ gsusie <- function(X, y,
                   prior_tol = 1e-9,
                   robust_estimation = FALSE,
                   robust_method = c("huber", "simple", "bisquare"),
-                  simple_outlier_fraction = 0.01,
+                  simple_outlier_fraction = NULL,
                   simple_outlier_thres = NULL,
                   huber_tuning_k = NULL,
                   bisquare_tuning_k = NULL,
@@ -217,6 +217,7 @@ gsusie <- function(X, y,
 
   gs <- init_setup(n, p, maxL, family, prior_inclusion_prob,
                    prior_var, null_weight)
+
   # Initialize elbo to NA
   elbo <- rep(as.numeric(NA), max_iters + 1)
   elbo[1] <- -Inf
