@@ -93,7 +93,7 @@ print.summary.gsusie <- function (x, ...) {
 #'
 #' @export
 #'
-coefficients.gsusie <- function(object, vars = NULL,
+gsusie_coefficients <- function(object, vars = NULL,
                                 decreasing = TRUE,
                                 top_n = 10,
                                 cred_int = TRUE,
