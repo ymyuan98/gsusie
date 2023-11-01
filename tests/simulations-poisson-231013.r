@@ -15,6 +15,7 @@ if.needed <- function(.files, .code) {
 
 # getwd()
 files_path <- "~/projects/gsusie/R/"
+# files_path <- "./R/"
 r_file_names <- list.files(path = files_path)
 
 for (i in 1 : length(r_file_names)) {
@@ -75,7 +76,7 @@ gen_filenames <- function(n, p, h2, mod, .prefix = NULL) {
 ################
 ## simulations
 
-n_trials <- 100
+n_trials <- 10
 
 ## read in arguments
 args <- commandArgs(trailingOnly = TRUE)
@@ -88,6 +89,7 @@ h2 <- as.numeric(args[3])
 
 model <- "poisson"
 .result.dir <- "~/projects/gsusie/results/synthetic-" %&% Sys.Date() %&% "-" %&% model %&% "/"
+# .result.dir <- "./results/synthetic-" %&% Sys.Date() %&% "-" %&% model %&% "/"
 if (!dir.exists(.result.dir)) {
   dir.create(.result.dir, recursive=TRUE, showWarnings=FALSE)
 }
@@ -103,7 +105,7 @@ if.needed(.result.dir %&% .filenames, {
   ## vn: vanilla (non-robust)
   ## hb: huber-weighting
   ## bs: bisquare-weighting
-  ## fc50: fraction 0.5
+  ## fc30: fraction 0.5
   ## fc5: fraction 0.05
   ## fc1: fraction 0.01
   ## la:   lasso
@@ -112,7 +114,8 @@ if.needed(.result.dir %&% .filenames, {
   ## rg10: ridge with 10 variables ...
   ## en:   elastic net
   ## en10: elastic net with 10 variables
-  methods_names <- c(paste("gs", c("vn", "hb", "bs", "fc50", "fc5", "fc1"),
+  methods_names <- c(paste("gs", c("vn", "hb_S", "hb_M", "hb_vSD", "hb_vMd",
+                                   "bs", "fc30", "fc5", "fc1"),
                            sep = "_"),
                      paste0(rep(c("la", "rg", "en"), each=2),
                             rep(c("", "10"), times = 3)))
@@ -126,21 +129,23 @@ if.needed(.result.dir %&% .filenames, {
   # AUPRC
   AUPRC <- as.data.frame(matrix(nrow = n_trials, ncol = length(methods_names)))
   # Convergence Warnings (gsusie)
-  convergeFlags <- as.data.frame(matrix(nrow = n_trials, ncol = 6))
+  convergeFlags <- as.data.frame(matrix(nrow = n_trials,
+                                ncol = length(startsWith(methods_names, "gs"))))
   # ELBOs (gsusie)
-  ELBO <- as.data.frame(matrix(nrow = n_trials, ncol = 6))
+  ELBO <- as.data.frame(matrix(nrow = n_trials,
+                               ncol = length(startsWith(methods_names, "gs"))))
 
   ##
   colnames(PPV) <- colnames(TPR) <- colnames(NumVs) <- colnames(AUPRC) <-
     methods_names
-  colnames(convergeFlags) <- colnames(ELBO) <- methods_names[1:6]
+  colnames(convergeFlags) <- colnames(ELBO) <- methods_names[1:ncol(ELBO)]
 
 
   for (tt in 1 : n_trials) {
     set.seed(20231020+tt)
 
     if (verbose) {
-      if (tt %% 10 == 0)
+      # if (tt %% 10 == 0)
         cat("Running the ", tt, "-th trial... \n")
     }
 
@@ -168,46 +173,108 @@ if.needed(.result.dir %&% .filenames, {
                           estimate_prior_method = "optim",
                           robust_estimation = F)
     }, error = function(err) {
-      print(paste("Error in the", tt, "trial: ", err))
+      print(paste("vanilla: Error in the", tt, "trial: ", err))
       res_gs_vn <- NULL
     })
 
     # Huber weighting
-    res_gs_hb <- gsusie(X, y, family = "poisson",
-                        estimate_prior_method = "optim",
-                        robust_estimation = T,
-                        robust_method = "huber")
+    tryCatch({
+      res_gs_hb_S <- gsusie(X, y, family = "poisson",
+                            estimate_prior_method = "optim",
+                            robust_estimation = T,
+                            robust_method = "huber",
+                            huber_tuning_k = "S")
+    }, error = function(err) {
+      print(paste("Huber-S: Error in the", tt, "trial: ", err))
+      res_gs_hb_S <- NULL
+    })
+
+    tryCatch({
+      res_gs_hb_M <- gsusie(X, y, family = "poisson",
+                            estimate_prior_method = "optim",
+                            robust_estimation = T,
+                            robust_method = "huber",
+                            huber_tuning_k = "M")
+    }, error = function(err) {
+      print(paste("Huber-M: Error in the", tt, "trial: ", err))
+      res_gs_hb_M <- NULL
+    })
+
+    tryCatch({
+      res_gs_hb_vSD <- gsusie(X, y, family = "poisson",
+                              estimate_prior_method = "optim",
+                              robust_estimation = T,
+                              robust_method = "huber",
+                              huber_tuning_k = "vSD")
+    }, error = function(err) {
+      print(paste("Huber-vSD: Error in the", tt, "trial: ", err))
+      res_gs_hb_vSD <- NULL
+    })
+
+    tryCatch({
+      res_gs_hb_vMd <- gsusie(X, y, family = "poisson",
+                              estimate_prior_method = "optim",
+                              robust_estimation = T,
+                              robust_method = "huber",
+                              huber_tuning_k = "vMd")
+    }, error = function(err) {
+      print(paste("Huber-vMd: Error in the", tt, "trial: ", err))
+      res_gs_hb_vMd <- NULL
+    })
+
 
     # Bisquare weighting
-    res_gs_bs <- gsusie(X, y, family = "poisson",
-                        estimate_prior_method = "optim",
-                        robust_estimation = T,
-                        robust_method = "bisquare")
+    tryCatch({
+      res_gs_bs <- gsusie(X, y, family = "poisson",
+                          estimate_prior_method = "optim",
+                          robust_estimation = T,
+                          robust_method = "bisquare")
 
-    # Weight dropped by fractions - 0.5
-    res_gs_fc50 <- gsusie(X, y, family = "poisson",
-                         estimate_prior_method = "optim",
-                         robust_estimation = T,
-                         robust_method = "simple",
-                         simple_outlier_fraction = 0.5,
-                         simple_outlier_thres = NULL,
-                         abnormal_proportion = 0.6)
+    }, error = function(err) {
+      print(paste("Bisquare-vMd: Error in the", tt, "trial: ", err))
+      res_gs_bs <- NULL
+    })
+
+    # Weight dropped by fractions - 0.3
+    tryCatch({
+      res_gs_fc30 <- gsusie(X, y, family = "poisson",
+                            estimate_prior_method = "optim",
+                            robust_estimation = T,
+                            robust_method = "simple",
+                            simple_outlier_fraction = 0.3,
+                            simple_outlier_thres = NULL)
+    }, error = function(err) {
+      print(paste("Simple-frac 0.3: Error in the", tt, "trial: ", err))
+      res_gs_fc30 <- NULL
+    })
 
     # Weight dropped by fractions - 0.05
-    res_gs_fc5 <- gsusie(X, y, family = "poisson",
-                         estimate_prior_method = "optim",
-                         robust_estimation = T,
-                         robust_method = "simple",
-                         simple_outlier_fraction = 0.05,
-                         simple_outlier_thres = NULL)
+    tryCatch({
+      res_gs_fc5 <- gsusie(X, y, family = "poisson",
+                           estimate_prior_method = "optim",
+                           robust_estimation = T,
+                           robust_method = "simple",
+                           simple_outlier_fraction = 0.05,
+                           simple_outlier_thres = NULL)
+    }, error = function(err) {
+      print(paste("Simple-frac 0.05: Error in the", tt, "trial: ", err))
+      res_gs_fc5 <- NULL
+    })
+
 
     # Weight dropped by fractions - 0.01
-    res_gs_fc1 <- gsusie(X, y, family = "poisson",
-                         estimate_prior_method = "optim",
-                         robust_estimation = T,
-                         robust_method = "simple",
-                         simple_outlier_fraction = 0.01,
-                         simple_outlier_thres = NULL)
+    tryCatch({
+      res_gs_fc1 <- gsusie(X, y, family = "poisson",
+                           estimate_prior_method = "optim",
+                           robust_estimation = T,
+                           robust_method = "simple",
+                           simple_outlier_fraction = 0.01,
+                           simple_outlier_thres = NULL)
+    }, error = function(err) {
+      print(paste("Simple-frac 0.01: Error in the", tt, "trial: ", err))
+      res_gs_fc1 <- NULL
+    })
+
 
     ### Comparison: GLMNET
     # Lasso
@@ -221,17 +288,23 @@ if.needed(.result.dir %&% .filenames, {
     #####################################
     ## convergeFlags
     convergeFlags$gs_vn[tt]  <- res_gs_vn$converged
-    convergeFlags$gs_hb[tt]  <- res_gs_hb$converged
+    convergeFlags$gs_hb_S[tt]    <- res_gs_hb_S$converged
+    convergeFlags$gs_hb_M[tt]    <- res_gs_hb_M$converged
+    convergeFlags$gs_hb_vSD[tt]  <- res_gs_hb_vSD$converged
+    convergeFlags$gs_hb_vMd[tt]  <- res_gs_hb_vMd$converged
     convergeFlags$gs_bs[tt]  <- res_gs_bs$converged
-    convergeFlags$gs_fc50[tt] <- res_gs_fc50$converged
+    convergeFlags$gs_fc30[tt] <- res_gs_fc30$converged
     convergeFlags$gs_fc5[tt] <- res_gs_fc5$converged
     convergeFlags$gs_fc1[tt] <- res_gs_fc1$converged
 
     ## ELBO
     ELBO$gs_vn[tt]  <- res_gs_vn$elbo[length(res_gs_vn$elbo)]
-    ELBO$gs_hb[tt]  <- res_gs_hb$elbo[length(res_gs_hb$elbo)]
+    ELBO$gs_hb_S[tt]    <- res_gs_hb_S$elbo[length(res_gs_hb_S$elbo)]
+    ELBO$gs_hb_M[tt]    <- res_gs_hb_S$elbo[length(res_gs_hb_M$elbo)]
+    ELBO$gs_hb_vSD[tt]  <- res_gs_hb_S$elbo[length(res_gs_hb_vSD$elbo)]
+    ELBO$gs_hb_vMd[tt]  <- res_gs_hb_S$elbo[length(res_gs_hb_vMd$elbo)]
     ELBO$gs_bs[tt]  <- res_gs_bs$elbo[length(res_gs_bs$elbo)]
-    ELBO$gs_fc50[tt] <- res_gs_fc50$elbo[length(res_gs_fc50$elbo)]
+    ELBO$gs_fc30[tt] <- res_gs_fc30$elbo[length(res_gs_fc30$elbo)]
     ELBO$gs_fc5[tt] <- res_gs_fc5$elbo[length(res_gs_fc5$elbo)]
     ELBO$gs_fc1[tt] <- res_gs_fc1$elbo[length(res_gs_fc1$elbo)]
 
@@ -239,9 +312,12 @@ if.needed(.result.dir %&% .filenames, {
     #####################################
     ## Evaluations - variable selection
     vars_gs_vn   <- get_selected_vars(res_gs_vn)
-    vars_gs_hb   <- get_selected_vars(res_gs_hb)
+    vars_gs_hb_S <- get_selected_vars(res_gs_hb_S)
+    vars_gs_hb_M <- get_selected_vars(res_gs_hb_M)
+    vars_gs_hb_vSD   <- get_selected_vars(res_gs_hb_vSD)
+    vars_gs_hb_vMd   <- get_selected_vars(res_gs_hb_vMd)
     vars_gs_bs   <- get_selected_vars(res_gs_bs)
-    vars_gs_fc50 <- get_selected_vars(res_gs_fc50)
+    vars_gs_fc30 <- get_selected_vars(res_gs_fc30)
     vars_gs_fc5  <- get_selected_vars(res_gs_fc5)
     vars_gs_fc1  <- get_selected_vars(res_gs_fc1)
     vars_la      <- get_selected_vars(res_la)
@@ -253,9 +329,12 @@ if.needed(.result.dir %&% .filenames, {
 
     ### Number of variables selected
     NumVs$gs_vn[tt]   <- length(vars_gs_vn)
-    NumVs$gs_hb[tt]   <- length(vars_gs_hb)
+    NumVs$gs_hb_S[tt]   <- length(vars_gs_hb_S)
+    NumVs$gs_hb_M[tt]   <- length(vars_gs_hb_M)
+    NumVs$gs_hb_vSD[tt]   <- length(vars_gs_hb_vSD)
+    NumVs$gs_hb_vMd[tt]   <- length(vars_gs_hb_vMd)
     NumVs$gs_bs[tt]   <- length(vars_gs_bs)
-    NumVs$gs_fc50[tt] <- length(vars_gs_fc50)
+    NumVs$gs_fc30[tt] <- length(vars_gs_fc30)
     NumVs$gs_fc5[tt]  <- length(vars_gs_fc5)
     NumVs$gs_fc1[tt]  <- length(vars_gs_fc5)
     NumVs$la[tt]      <- length(vars_la)
@@ -267,9 +346,12 @@ if.needed(.result.dir %&% .filenames, {
 
     ### Precision
     PPV$gs_vn[tt]   <- evaluate_ppv(vars_gs_vn,  effect_idx)
-    PPV$gs_hb[tt]   <- evaluate_ppv(vars_gs_hb,  effect_idx)
+    PPV$gs_hb_S[tt]   <- evaluate_ppv(vars_gs_hb_S,  effect_idx)
+    PPV$gs_hb_M[tt]   <- evaluate_ppv(vars_gs_hb_M,  effect_idx)
+    PPV$gs_hb_vSD[tt]   <- evaluate_ppv(vars_gs_hb_vSD,  effect_idx)
+    PPV$gs_hb_vMd[tt]   <- evaluate_ppv(vars_gs_hb_vMd,  effect_idx)
     PPV$gs_bs[tt]   <- evaluate_ppv(vars_gs_bs,  effect_idx)
-    PPV$gs_fc50[tt] <- evaluate_ppv(vars_gs_fc50, effect_idx)
+    PPV$gs_fc30[tt] <- evaluate_ppv(vars_gs_fc30, effect_idx)
     PPV$gs_fc5[tt]  <- evaluate_ppv(vars_gs_fc5, effect_idx)
     PPV$gs_fc1[tt]  <- evaluate_ppv(vars_gs_fc5, effect_idx)
     PPV$la[tt]      <- evaluate_ppv(vars_la, effect_idx)
@@ -281,9 +363,12 @@ if.needed(.result.dir %&% .filenames, {
 
     ### Recall
     TPR$gs_vn[tt]  <- evaluate_tpr(vars_gs_vn,  effect_idx)
-    TPR$gs_hb[tt]  <- evaluate_tpr(vars_gs_hb,  effect_idx)
+    TPR$gs_hb_S[tt]  <- evaluate_tpr(vars_gs_hb_S,  effect_idx)
+    TPR$gs_hb_M[tt]  <- evaluate_tpr(vars_gs_hb_M,  effect_idx)
+    TPR$gs_hb_vSD[tt]  <- evaluate_tpr(vars_gs_hb_vSD,  effect_idx)
+    TPR$gs_hb_vMd[tt]  <- evaluate_tpr(vars_gs_hb_vMd,  effect_idx)
     TPR$gs_bs[tt]  <- evaluate_tpr(vars_gs_bs,  effect_idx)
-    TPR$gs_fc50[tt]<- evaluate_tpr(vars_gs_fc50, effect_idx)
+    TPR$gs_fc30[tt]<- evaluate_tpr(vars_gs_fc30, effect_idx)
     TPR$gs_fc5[tt] <- evaluate_tpr(vars_gs_fc5, effect_idx)
     TPR$gs_fc1[tt] <- evaluate_tpr(vars_gs_fc5, effect_idx)
     TPR$la[tt]     <- evaluate_tpr(vars_la, effect_idx)
@@ -298,11 +383,17 @@ if.needed(.result.dir %&% .filenames, {
     labs <- 1 * ((1 : pp) %in% effect_idx)  # drop the intercept term!
     AUPRC$gs_vn[tt] <- pr.curve(scores.class0 = res_gs_vn$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
-    AUPRC$gs_hb[tt] <- pr.curve(scores.class0 = res_gs_hb$pip[-ncol(X)],
+    AUPRC$gs_hb_S[tt] <- pr.curve(scores.class0 = res_gs_hb_S$pip[-ncol(X)],
+                                weights.class0 = labs)$auc.integral
+    AUPRC$gs_hb_M[tt] <- pr.curve(scores.class0 = res_gs_hb_M$pip[-ncol(X)],
+                                weights.class0 = labs)$auc.integral
+    AUPRC$gs_hb_vSD[tt] <- pr.curve(scores.class0 = res_gs_hb_vSD$pip[-ncol(X)],
+                                weights.class0 = labs)$auc.integral
+    AUPRC$gs_hb_vMd[tt] <- pr.curve(scores.class0 = res_gs_hb_vMd$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
     AUPRC$gs_bs[tt] <- pr.curve(scores.class0 = res_gs_bs$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
-    AUPRC$gs_fc50[tt] <- pr.curve(scores.class0 = res_gs_fc50$pip[-ncol(X)],
+    AUPRC$gs_fc30[tt] <- pr.curve(scores.class0 = res_gs_fc30$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
     AUPRC$gs_fc5[tt] <- pr.curve(scores.class0 = res_gs_fc5$pip[-ncol(X)],
                                 weights.class0 = labs)$auc.integral
@@ -321,12 +412,27 @@ if.needed(.result.dir %&% .filenames, {
 
     ###############
     # remove
-    rm_ls <- startsWith(ls(), "vars_") | startsWith(ls(), "res_")
-    rm_ls <- append(rm_ls, endsWith(ls(), "_coefs"))
-    rm_ls <- append(rm_ls, labs)
+    rm_ls <- ls()[startsWith(ls(), "vars_") | startsWith(ls(), "res_")]
+    rm_ls <- append(rm_ls, ls()[endsWith(ls(), "_coefs")])
+    rm_ls <- append(rm_ls, "labs")
     rm(list = rm_ls)
+
+    ###############
+    ## for clusters: save results every 50 runs
+    if (tt %% 10 == 0) {  #
+      saveRDS(list(Precision = PPV,
+                   Recall    = TPR,
+                   AUPRC     = AUPRC,
+                   NumVs     = NumVs,
+                   convergeFlags = convergeFlags,
+                   ELBO = ELBO),
+              file = .result.dir %&% .filenames)
+    }
+
   }
 
+  ###############
+  ## for local computer: save results at the end
   saveRDS(list(Precision = PPV,
                Recall    = TPR,
                AUPRC     = AUPRC,
