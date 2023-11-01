@@ -86,21 +86,18 @@ robust_importance_weights <- function(
     huber_tuning_k <- 1.345   #? is this parameter consistant in all methods?
 
     if (tuning_k == "M") {  # M-Estimation
-      message("huber-M")
       hat_sigma_r <- median(abs(values - median(values))) / 0.6745
       std_resid <- values /  hat_sigma_r  # standardized residuals u
       imp_weights <- huber_weight_(std_resid, huber_tuning_k)
     }
     else if (tuning_k == "S") { # S-Estimation
       if (is.null(previous_imp_weights)) {
-        message("huber-S:initializing")
         # iteration = 1, initialization
         hat_sigma_r <- median(abs(values - median(values))) / 0.6745
         std_resid <- values / hat_sigma_r
         imp_weights <- huber_weight_(std_resid, huber_tuning_k)
       }
       else {  # iteration > 1
-        message("huber-S: updating weights")
         hat_sigma_r <- sqrt(
           sum(sweep(previous_imp_weights, 1, values^2, "*")) /
             (length(values) * 0.199)
@@ -130,7 +127,6 @@ robust_importance_weights <- function(
         imp_weights <- bisquare_weight_(std_resid, bisquare_tuning_k)
       }
       else {  # iteration > 1
-        message("bisquare-S: updating weights")
         bisquare_tuning_k <- 4.685
         hat_sigma_r <- sqrt(
           sum(sweep(previous_imp_weights, 1, values^2, "*")) /
