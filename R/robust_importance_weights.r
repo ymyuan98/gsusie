@@ -53,20 +53,19 @@ robust_importance_weights <- function(
     robust_method = c("none", "huber", "simple", "bisquare"),
     simple_outlier_fraction = NULL,
     simple_outlier_thres = NULL,
-    # huber_tuning_k = NULL,
-    huber_tuning_k = c("M", "S", "vSD", "vMd"),
-    bisquare_tuning_k = NULL,
+    tuning_k = c("M", "S"),
     previous_imp_weights = NULL  # if is NULL, S-estimation needs to be initialized.
 ){
 
   robust_method <- match.arg(robust_method)
-  huber_tuning_k <- match.arg(huber_tuning_k)
+  tuning_k <- match.arg(tuning_k)
 
   if (robust_method == "none") {
     imp_weights <- rep(1, times = length(values))
 
   }
   else if (robust_method == "simple") {
+    # value: weight
     if (!is.null(simple_outlier_fraction)) {
       if (simple_outlier_fraction <= 0 | simple_outlier_fraction >= 1)
       {stop("simple_outlier_fraction should be a value between 0 and 1")}
@@ -84,46 +83,64 @@ robust_importance_weights <- function(
   }
   else if (robust_method == "huber"){
     # value: residual
+    huber_tuning_k <- 1.345   #? is this parameter consistant in all methods?
 
-    # if (is.null(huber_tuning_k)) {
-    if (huber_tuning_k == "M") {  # M-Estimation
+    if (tuning_k == "M") {  # M-Estimation
+      message("huber-M")
       hat_sigma_r <- median(abs(values - median(values))) / 0.6745
-      huber_tuning_k <- 1.345 * hat_sigma_r
-      # super conservative
-      imp_weights <- huber_weight_(values, huber_tuning_k)
+      std_resid <- values /  hat_sigma_r  # standardized residuals u
+      imp_weights <- huber_weight_(std_resid, huber_tuning_k)
     }
-    else if (huber_tuning_k == "S") { # S-Estimation
+    else if (tuning_k == "S") { # S-Estimation
       if (is.null(previous_imp_weights)) {
+        message("huber-S:initializing")
         # iteration = 1, initialization
         hat_sigma_r <- median(abs(values - median(values))) / 0.6745
-        huber_tuning_k <- 1.345 * hat_sigma_r
-        imp_weights <- huber_weight_(values, huber_tuning_k)
-
-      } else { # for iteration > 1
+        std_resid <- values / hat_sigma_r
+        imp_weights <- huber_weight_(std_resid, huber_tuning_k)
+      }
+      else {  # iteration > 1
+        message("huber-S: updating weights")
         hat_sigma_r <- sqrt(
           sum(sweep(previous_imp_weights, 1, values^2, "*")) /
             (length(values) * 0.199)
           )
-        sdr <- values / hat_sigma_r  # standardized residuals u
-        imp_weights <- huber_loss_(sdr, 1.345) / sdr^2
+        std_resid <- values / hat_sigma_r
+        imp_weights <-
+          huber_loss_(std_resid, huber_tuning_k) / std_resid^2
       }
     }
-    else if(huber_tuning_k == "vSD") {
-      huber_tuning_k <- 1.345 * sd(values)
-      imp_weights <- huber_weight_(values, huber_tuning_k)
 
-    }
-    else if (huber_tuning_k == "vMd") {
-      huber_tuning_k <- 1.345 * median(abs(values))
-      imp_weights <- huber_weight_(values, huber_tuning_k)
-    }
+  }
+  else if (robust_method == "bisquare") {
 
+    if (tuning_k == "M") {
+      bisquare_tuning_k <- 4.685
+      hat_sigma_r <- mean(abs(values - median(values))) / 0.6745
+      std_resid <- values / hat_sigma_r
+      imp_weights <- bisquare_weight_(std_resid, bisquare_tuning_k)
 
-  } else if (robust_method == "bisquare") {
-    if (is.null(bisquare_tuning_k)) {
-      bisquare_tuning_k <- 4.685 * median(abs(values)) / 0.6745
+    } else if (tuning_k == "S") {
+      if (is.null(previous_imp_weights)) {
+        # bisquare_tuning_k <- 1.547  ## too strict?!
+        bisquare_tuning_k <- 4.685
+        # iteration = 1, initialization
+        hat_sigma_r <- median(abs(values - median(values))) / 0.6745
+        std_resid <- values / hat_sigma_r
+        imp_weights <- bisquare_weight_(std_resid, bisquare_tuning_k)
+      }
+      else {  # iteration > 1
+        message("bisquare-S: updating weights")
+        bisquare_tuning_k <- 4.685
+        hat_sigma_r <- sqrt(
+          sum(sweep(previous_imp_weights, 1, values^2, "*")) /
+            (length(values) * 0.199)
+        )
+        std_resid <- values / hat_sigma_r
+        imp_weights <-
+          bisquare_loss_(std_resid, bisquare_tuning_k) / std_resid^2
+      }
     }
-    imp_weights <- bisquare_weight_(values, bisquare_tuning_k)
 
   }
 
@@ -141,6 +158,13 @@ huber_weight_ <- function(r, k) {
   return(out)
 }
 
+bisquare_loss_ <- function(r, k) {
+  out <- ifelse(abs(r) <= k,
+                k^2/6 * (1 - (1-(r/k)^2)^3),
+                k^2 / 6)
+  return(out)
+}
+
 bisquare_weight_ <- function(r, k) {
   out <- ifelse(abs(r) <= k, (1 - (r/k)^2)^2, 0)
   return(out)
@@ -148,6 +172,16 @@ bisquare_weight_ <- function(r, k) {
 
 
 
+
+# else if(tuning_k == "vSD") {
+#   huber_tuning_k <- 1.345 * sd(values)
+#   imp_weights <- huber_weight_(values, huber_tuning_k)
+#
+# }
+# else if (tuning_k == "vMd") {
+#   huber_tuning_k <- 1.345 * abs(median(values))
+#   imp_weights <- huber_weight_(values, huber_tuning_k)
+# }
 
 
 

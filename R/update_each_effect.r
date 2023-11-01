@@ -20,8 +20,7 @@ update_each_effect <- function(X, y, gs, model,
                                robust_method = "simple",
                                simple_outlier_fraction = 0.01,
                                simple_outlier_thres = NULL,
-                               huber_tuning_k = NULL,
-                               bisquare_tuning_k = NULL
+                               tuning_k = NULL
                               ) {
 
   if (!estimate_prior_variance) estimate_prior_method = "none"
@@ -50,24 +49,26 @@ update_each_effect <- function(X, y, gs, model,
   if (robust_estimation) {
     if (robust_method == "simple") {
       # "simple" method bases on weights
-      imp_weights <- robust_importance_weights(weights,
+      gs$imp_weights <- robust_importance_weights(weights,
                               robust_method = "simple",
                               simple_outlier_fraction = simple_outlier_fraction,
                               simple_outlier_thres = simple_outlier_thres)
     } else if (robust_method == "huber") {
       # "huber" method bases on residual rr
-      imp_weights <- robust_importance_weights(rr,
+      gs$imp_weights <- robust_importance_weights(rr,
                               robust_method = "huber",
-                              huber_tuning_k = huber_tuning_k)
+                              tuning_k      = tuning_k,
+                              previous_imp_weights = gs$imp_weights)
     } else if (robust_method == "bisquare") {
       # "bisquare" method bases on residual rr
-      imp_weights <- robust_importance_weights(rr,
+      gs$imp_weights <- robust_importance_weights(rr,
                               robust_method = "bisquare",
-                              bisquare_tuning_k = bisquare_tuning_k)
+                              tuning_k      = tuning_k,
+                              previous_imp_weights = gs$imp_weights)
     } else {
       stop("Invalid option for robust_importance_weights method!")
     }
-    weights <- sweep(weights, 1, imp_weights, "*")
+    weights <- sweep(weights, 1, gs$imp_weights, "*")
   }
 
 

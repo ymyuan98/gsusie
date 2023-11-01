@@ -115,8 +115,7 @@ gsusie <- function(X, y,
                   robust_method = c("huber", "simple", "bisquare"),
                   simple_outlier_fraction = NULL,
                   simple_outlier_thres = NULL,
-                  huber_tuning_k = NULL,
-                  bisquare_tuning_k = NULL,
+                  tuning_k = c("S", "M"),
                   null_weight = 0,
                   standardize = TRUE,
                   coverage = 0.95,
@@ -241,8 +240,7 @@ gsusie <- function(X, y,
                              robust_method           = robust_method,
                              simple_outlier_fraction = simple_outlier_fraction,
                              simple_outlier_thres    = simple_outlier_thres,
-                             huber_tuning_k          = huber_tuning_k,
-                             bisquare_tuning_k       = bisquare_tuning_k
+                             tuning_k                = tuning_k
                              )
 
     eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
@@ -262,6 +260,20 @@ gsusie <- function(X, y,
       cat("ELBO:", elbo[tt+1], "\n")
       # cat("Loglik:", loglik_exact[tt+1], "\n")
     }
+
+
+    # ## Little early-stop trick for robust:simple-fraction
+    # if (robust_estimation) {
+    #   if (robust_method == "simple" & !is.null(simple_outlier_fraction)) {
+    #     if (tt <= max_iters / 4) next
+    #     else {
+    #       if (any( abs(elbo[tt+1] - elbo[(tt-5):tt]) < tol) ){
+    #         gs$converged <- TRUE
+    #         break
+    #       }
+    #     }
+    #   }
+    # }
 
     if (abs(elbo[tt + 1] - elbo[tt]) < tol) {
         gs$converged <- TRUE
