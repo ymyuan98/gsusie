@@ -54,3 +54,4 @@ rsconnect/
 tests/params.csv
 tests/params.txt
 tests/params.xlsx
+*.txt
