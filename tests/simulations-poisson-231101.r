@@ -44,8 +44,6 @@ gen_filename <- function(n, p, h2, mod, seed,
 ################
 ## simulations
 
-
-
 ## read in arguments
 args <- commandArgs(trailingOnly = TRUE)
 ID <- as.numeric(args[1])
