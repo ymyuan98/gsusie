@@ -68,6 +68,7 @@ update_each_effect <- function(X, y, gs, model,
     } else {
       stop("Invalid option for robust_importance_weights method!")
     }
+
     weights <- sweep(weights, 1, gs$imp_weights, "*")
   }
 
