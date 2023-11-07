@@ -64,6 +64,7 @@ robust_importance_weights <- function(
     imp_weights <- rep(1, times = length(values))
 
   }
+
   else if (robust_method == "simple") {
     # value: weight
     if (!is.null(simple_outlier_fraction)) {
@@ -87,19 +88,31 @@ robust_importance_weights <- function(
 
     if (tuning_k == "M") {  # M-Estimation
       hat_sigma_r <- median(abs(values - median(values))) / 0.6745
-      std_resid <- values /  hat_sigma_r  # standardized residuals u
+      # if (hat_sigma_r != 0) {
+        std_resid <- values /  hat_sigma_r  # standardized residuals u
+      # } else {
+      #   # In logistic regression, usually at the first step hat_sigma_r == 0;
+      #   std_resid <- rep(1, times = length(values))
+      # }
       imp_weights <- huber_weight_(std_resid, huber_tuning_k)
     }
     else if (tuning_k == "S") { # S-Estimation
       if (is.null(previous_imp_weights)) {
         # iteration = 1, initialization
         hat_sigma_r <- median(abs(values - median(values))) / 0.6745
-        std_resid <- values / hat_sigma_r
+        # if (hat_sigma_r != 0) {
+          std_resid <- values /  hat_sigma_r  # standardized residuals u
+        # } else {
+        #   # In logistic regression, usually at the first step hat_sigma_r == 0;
+        #   std_resid <- rep(1, times = length(values))
+        # }
+
         imp_weights <- huber_weight_(std_resid, huber_tuning_k)
       }
-      else {  # iteration > 1
+      else {
+        # iteration > 1
         hat_sigma_r <- sqrt(
-          sum(sweep(previous_imp_weights, 1, values^2, "*")) /
+          sum(sweep(as.matrix(previous_imp_weights), 1, values^2, "*")) /
             (length(values) * 0.199)
           )
         std_resid <- values / hat_sigma_r
@@ -113,7 +126,7 @@ robust_importance_weights <- function(
 
     if (tuning_k == "M") {
       bisquare_tuning_k <- 4.685
-      hat_sigma_r <- mean(abs(values - median(values))) / 0.6745
+      hat_sigma_r <- median(abs(values - median(values))) / 0.6745
       std_resid <- values / hat_sigma_r
       imp_weights <- bisquare_weight_(std_resid, bisquare_tuning_k)
 
@@ -129,7 +142,7 @@ robust_importance_weights <- function(
       else {  # iteration > 1
         bisquare_tuning_k <- 4.685
         hat_sigma_r <- sqrt(
-          sum(sweep(previous_imp_weights, 1, values^2, "*")) /
+          sum(sweep(as.matrix(previous_imp_weights), 1, values^2, "*")) /
             (length(values) * 0.199)
         )
         std_resid <- values / hat_sigma_r
