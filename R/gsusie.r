@@ -261,20 +261,6 @@ gsusie <- function(X, y,
       # cat("Loglik:", loglik_exact[tt+1], "\n")
     }
 
-
-    # ## Little early-stop trick for robust:simple-fraction
-    # if (robust_estimation) {
-    #   if (robust_method == "simple" & !is.null(simple_outlier_fraction)) {
-    #     if (tt <= max_iters / 4) next
-    #     else {
-    #       if (any( abs(elbo[tt+1] - elbo[(tt-5):tt]) < tol) ){
-    #         gs$converged <- TRUE
-    #         break
-    #       }
-    #     }
-    #   }
-    # }
-
     if (abs(elbo[tt + 1] - elbo[tt]) < tol) {
         gs$converged <- TRUE
         break
