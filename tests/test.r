@@ -90,14 +90,19 @@ pp <- 1000
 h2 <- 0.5
 
 X <- matrix(rnorm(nn * pp), ncol = pp)
-Eta <- sqrt(h2) * (-2*X[,1] + 0.5*X[,6]) + sqrt(1-h2) * rnorm(nn)
+n_effect_vars <- 10  ## number of effective variables
+effect_idx <- sort(sample(1 : pp, size = n_effect_vars))
+bb <- rnorm(n_effect_vars)
+data.frame(variable = paste0("X", effect_idx), effect_size = bb)
+
+Eta <- sqrt(h2) * (X[ ,effect_idx, drop = F] %*% as.matrix(bb)) +
+  sqrt(1-h2) * rnorm(nn)
 expEta <- exp(Eta)
 y1 <- rpois(nn, expEta)
 y <- exp(scale(log1p(y1)))
 plot(y)
 
-# res_susie <- susie(X, y, L = 10)
-# summary(res_susie)s
+
 
 ## our method
 X <- cbind(X, 1)
@@ -106,41 +111,61 @@ colnames(X) <- paste0("X", c(1:pp, 0))
 dim(X)
 length(y)
 
-## Threshold-removal
-res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
-                     max_iters = 500, tol = 1e-2,
+## Non-robust-estimation
+res_gs_vn <- gsusie(X, y, family = "poisson", maxL = 10,
+                     max_iters = 100, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
-                     robust_estimation = T,
-                     robust_method = "simple",
-                     simple_outlier_fraction = 0.01,
-                     simple_outlier_thres = NULL,
+                     robust_estimation = F,
                      verbose = T)
 
+# ## Threshold-removal
+# res_gs_thres <- gsusie(X, y, family = "poisson", maxL = 10,
+#                      max_iters = 500, tol = 1e-2,
+#                      coef_prior_variance = 1,
+#                      estimate_prior_method = "optim",
+#                      robust_estimation = T,
+#                      robust_method = "simple",
+#                      simple_outlier_fraction = 0.01,
+#                      simple_outlier_thres = NULL,
+#                      verbose = T)
+
 ## Huber-weighting
-res_gs_huber <- gsusie(X, y, family = "poisson", maxL = 10,
+res_gs_hb_M <- gsusie(X, y, family = "poisson", maxL = 10,
                      max_iters = 100, tol = 1e-2,
                      coef_prior_variance = 1,
                      estimate_prior_method = "optim",
                      robust_estimation = T,
                      robust_method = "huber",
-                     verbose = T)
+                     tuning_k = "M")
+res_gs_hb_S <- gsusie(X, y, family = "poisson", maxL = 10,
+                       max_iters = 100, tol = 1e-2,
+                       coef_prior_variance = 1,
+                       estimate_prior_method = "optim",
+                       robust_estimation = T,
+                       robust_method = "huber",
+                       tuning_k = "S")
 
 ## bisquare-weighting
-res_gs_bisquare <- gsusie(X, y, family = "poisson", maxL = 10,
+res_gs_bs_M <- gsusie(X, y, family = "poisson", maxL = 10,
                        max_iters = 500, tol = 1e-2,
                        coef_prior_variance = 1,
                        estimate_prior_method = "optim",
                        robust_estimation = T,
                        robust_method = "bisquare",
+                      tuning_k = "M",
                        verbose = T)
 
-## Non-robust-estimation
-res_gsusie <- gsusie(X, y, family = "poisson", maxL = 10,
-                     max_iters = 100, tol = 1e-2,
-                     coef_prior_variance = 1,
-                     estimate_prior_method = "optim",
-                     robust_estimation = F)
+res_gs_bs_S <- gsusie(X, y, family = "poisson", maxL = 15,
+                      max_iters = 500, tol = 1e-2,
+                      coef_prior_variance = 1,
+                      estimate_prior_method = "optim",
+                      robust_estimation = T,
+                      robust_method = "bisquare",
+                      tuning_k = "S",
+                      verbose = T)
+
+
 
 # res_gsusie$sets
 # round(res_gsusie$alpha, digits = 3)
@@ -213,7 +238,12 @@ colnames(X) <- paste0("X", c(1:pp, 0))
 
 plot(y)
 
+###############################################################################
 
+res_gs_vn <- gsusie(X, y, family = "poisson",
+                    robust_estimation = F)
+summary(res_gs_vn)
+gsusie_coefficients(res_gs_vn)
 
 res_gs_hbS <- gsusie(X, y, family = "poisson",
                      robust_estimation = T,
@@ -230,16 +260,26 @@ summary(res_gs_hbM)
 gsusie_coefficients(res_gs_hbM)
 
 
-res_gs_hbvSD <- gsusie(X, y, family = "poisson",
-                       robust_estimation = T,
-                       robust_method = "huber",
-                       huber_tuning_k = "vSD")
-summary(res_gs_hbvSD)
-gsusie_coefficients(res_gs_hbvSD)
+################################################################################
 
-res_gs_hbvMd <- gsusie(X, y, family = "poisson",
-                       robust_estimation = T,
-                       robust_method = "huber",
-                       huber_tuning_k = "vMd")
-summary(res_gs_hbvMd)
-gsusie_coefficients(res_gs_hbvMd)
+
+a <- tryCatch({
+  res <- log("log_me")
+}, error = function(err) {
+  res <- 3
+  message("Hi there", err)
+  return(res)
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
