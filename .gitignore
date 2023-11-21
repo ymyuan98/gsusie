@@ -56,3 +56,4 @@ tests/params.txt
 tests/params.xlsx
 *.txt
 *.gz
+results/directories-descriptions.xlsx
