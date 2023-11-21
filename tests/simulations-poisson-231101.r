@@ -85,12 +85,12 @@ if.needed(.result.dir %&% .filename, {
   methods_names <- c(paste("gs", c("vn", "hb_S", "hb_M", "bs_S", "bs_M",
                                    "fc30", "fc5", "fc1"),
                            sep = "_"),
-                     c("la", "rr", "en"))
+                     "su", "la", "rr", "en")
 
 
   #################################
   ## Data generation
-  set.seed(seed)
+  set.seed(20231114+seed)
   X <- matrix(rnorm(nn * pp), ncol = pp)
   effect_idx <- sort(sample(1 : pp, size = n_effect_vars))
   bb <- rnorm(n_effect_vars)
@@ -107,115 +107,119 @@ if.needed(.result.dir %&% .filename, {
   ## Method comparison
 
   # Non-robust estimation (vanilla)
-  tryCatch({
-    res_gs_vn <- gsusie(X, y, family = "poisson",
-                        estimate_prior_method = "optim",
-                        robust_estimation = F)
+  res_gs_vn <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = F)
   }, error = function(err) {
-    print(paste("Vanilla. seed:", seed, "error:", err))
-    res_gs_vn <- list()
-    res_gs_vn$pip <- rep(NA, times = ncol(X))
+    message("Vanilla. seed:", seed, ". error: ", err)
   })
 
   # Huber weighting
-  tryCatch({
-    res_gs_hb_S <- gsusie(X, y, family = "poisson",
-                          estimate_prior_method = "optim",
-                          robust_estimation = T,
-                          robust_method = "huber",
-                          tuning_k = "S")
+  res_gs_hb_S <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "huber",
+           tuning_k = "S")
   }, error = function(err) {
-    print(paste("Huber-S. seed:", seed, "error:", err))
-    res_gs_hb_S <- list()
-    res_gs_hb_S$pip <- rep(NA, times = ncol(X))
+    message("Huber-S. seed: ", seed, " error: ", err)
   })
 
-  tryCatch({
-    res_gs_hb_M <- gsusie(X, y, family = "poisson",
-                          estimate_prior_method = "optim",
-                          robust_estimation = T,
-                          robust_method = "huber",
-                          tuning_k = "M")
+
+  res_gs_hb_M <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "huber",
+           tuning_k = "M")
   }, error = function(err) {
-    print(paste("Huber-M. seed:", seed, "error:", err))
-    res_gs_hb_M <- list()
-    res_gs_hb_M$pip <- rep(NA, times = ncol(X))
+    message("Huber-M. seed: ", seed, " error: ", err)
   })
 
   # Bisquare weighting
-  tryCatch({
-    res_gs_bs_S <- gsusie(X, y, family = "poisson",
-                            estimate_prior_method = "optim",
-                            robust_estimation = T,
-                            robust_method = "bisquare",
-                            tuning_k = "S")
+  res_gs_bs_S <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "bisquare",
+           tuning_k = "S")
   }, error = function(err) {
-    print(paste("Bisquare-S. seed:", seed, "error:", err))
-    res_gs_bs_S <- list()
-    res_gs_bs_S$pip <- rep(NA, times = ncol(X))
+    message("Bisquare-S. seed: ", seed, " error: ", err)
   })
 
-  tryCatch({
-    res_gs_bs_M <- gsusie(X, y, family = "poisson",
-                            estimate_prior_method = "optim",
-                            robust_estimation = T,
-                            robust_method = "bisquare",
-                            tuning_k = "M")
+  res_gs_bs_M <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "bisquare",
+           tuning_k = "M")
   }, error = function(err) {
-    print(paste("Bisquare-M. seed:", seed, "error:", err))
-    res_gs_bs_M <- list()
-    res_gs_bs_M$pip <- rep(NA, times = ncol(X))
+    message("Bisquare-M. seed: ", seed, " error: ", err)
   })
 
   # Weight dropped by fractions - 0.3
-  tryCatch({
-    res_gs_fc30 <- gsusie(X, y, family = "poisson",
-                          estimate_prior_method = "optim",
-                          robust_estimation = T,
-                          robust_method = "simple",
-                          simple_outlier_fraction = 0.3,
-                          simple_outlier_thres = NULL)
+  res_gs_fc30 <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "simple",
+           simple_outlier_fraction = 0.3,
+           simple_outlier_thres = NULL)
   }, error = function(err) {
-    print(paste("Simple-frac-0.3. seed:", seed, "error:", err))
-    res_gs_fc30 <- list()
-    res_gs_fc30$pip <- rep(NA, times = ncol(X))
+    message("Simple-frac-0.3. seed: ", seed, " error: ", err)
   })
 
   # Weight dropped by fractions - 0.05
-  tryCatch({
-    res_gs_fc5 <- gsusie(X, y, family = "poisson",
-                         estimate_prior_method = "optim",
-                         robust_estimation = T,
-                         robust_method = "simple",
-                         simple_outlier_fraction = 0.05,
-                         simple_outlier_thres = NULL)
+  res_gs_fc5 <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "simple",
+           simple_outlier_fraction = 0.05,
+           simple_outlier_thres = NULL)
   }, error = function(err) {
-    print(paste("Simple-frac-0.05. seed:", seed, "error:", err))
-    res_gs_fc5 <- list()
-    res_gs_fc5$pip <- rep(NA, times = ncol(X))
+    message("Simple-frac-0.05. seed: ", seed, " error: ", err)
   })
 
   # Weight dropped by fractions - 0.01
-  tryCatch({
-    res_gs_fc1 <- gsusie(X, y, family = "poisson",
-                         estimate_prior_method = "optim",
-                         robust_estimation = T,
-                         robust_method = "simple",
-                         simple_outlier_fraction = 0.01,
-                         simple_outlier_thres = NULL)
+  res_gs_fc1 <- tryCatch({
+    gsusie(X, y, family = "poisson",
+           estimate_prior_method = "optim",
+           robust_estimation = T,
+           robust_method = "simple",
+           simple_outlier_fraction = 0.01,
+           simple_outlier_thres = NULL)
   }, error = function(err) {
-    print(paste("Simple-frac-0.01. seed:", seed, "error:", err))
-    res_gs_fc1 <- list()
-    res_gs_fc1$pip <- rep(NA, times = ncol(X))
+    message("Simple-frac-0.01. seed: ", seed, " error: ", err)
   })
+
+  ### Comparison: SuSiE
+  res_su <- susie(X = X[, -ncol(X)], y = y)
 
   ### Comparison: GLMNET
   # Lasso
-  res_la <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 1)
+  res_la <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 1)
   # Ridge regression
-  res_rr <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 0)
+  res_rr <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 0)
   # Elastic net: alpha=0.5
-  res_en <- cv.glmnet(x = X[, -(pp+1)], y, family = "poisson", alpha = 0.5)
+  res_en <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 0.5)
+
+
+  ##############################################################################
+  extract_pip <- function(gs_res) {
+    if (is.null(gs_res)) {
+      # gs is not fitted due to certain results
+      pip <- rep(NA, times = pp)
+    }
+    else if (class(gs_res) %in% "gsusie"){
+      pip <- gs_res$pip
+      names(pip) <- names(gs_res$pip)
+      pip <- pip[-length(pip)]
+      # remove the intercept term.
+    }
+    return(pip)
+  }
 
   #############################################
   output <- list()
@@ -231,24 +235,26 @@ if.needed(.result.dir %&% .filename, {
   )
 
   ## save results
-  output$gs_pip <- data.frame(
-    cbind(res_gs_vn$pip[c((pp+1), 1:pp)], # move intercept to the front
-          res_gs_hb_M$pip[c((pp+1), 1:pp)],
-          res_gs_hb_S$pip[c((pp+1), 1:pp)],
-          res_gs_bs_M$pip[c((pp+1), 1:pp)],
-          res_gs_bs_S$pip[c((pp+1), 1:pp)],
-          res_gs_fc1$pip[c((pp+1), 1:pp)],
-          res_gs_fc5$pip[c((pp+1), 1:pp)],
-          res_gs_fc30$pip[c((pp+1), 1:pp)]),
-    row.names = paste0("X", 0:pp)
+  output$pip <- data.frame(
+    cbind(extract_pip(res_gs_vn), # move intercept to the front
+          extract_pip(res_gs_hb_M),
+          extract_pip(res_gs_hb_S),
+          extract_pip(res_gs_bs_M),
+          extract_pip(res_gs_bs_S),
+          extract_pip(res_gs_fc1),
+          extract_pip(res_gs_fc5),
+          extract_pip(res_gs_fc30),
+          res_su$pip),
+    row.names = paste0("X", 1:pp)
   )
-  colnames(output$gs_pip) <- methods_names[startsWith(methods_names, "gs")]
+  colnames(output$pip) <-
+    c(methods_names[startsWith(methods_names, "gs")], "su")
 
   output$gn_coef <- data.frame(
-    cbind(as.numeric(coef(res_la, s = "lambda.min")),
-          as.numeric(coef(res_rr, s = "lambda.min")),
-          as.numeric(coef(res_en, s = "lambda.min"))),
-    row.names = paste0("X", 0:pp)
+    cbind(as.numeric(coef(res_la, s = "lambda.min"))[-1],
+          as.numeric(coef(res_rr, s = "lambda.min"))[-1],
+          as.numeric(coef(res_en, s = "lambda.min"))[-1]),
+    row.names = paste0("X", 1:pp)
   )
   colnames(output$gn_coef) <- c("la", "rr", "en")
 
