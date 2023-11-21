@@ -4,6 +4,7 @@
 library(glmnet)
 # library(coefplot)
 library(bigsnpr)
+library(susieR)
 
 `%&%` <- function(a, b) paste0(a, b)
 if.needed <- function(.files, .code) {
@@ -90,7 +91,7 @@ if.needed(.result.dir %&% .filename, {
   methods_names <- c(paste("gs", c("vn", "hb_S", "hb_M", "bs_S", "bs_M",
                                    "fc30", "fc5", "fc1"),
                            sep = "_"),
-                     c("la", "rr", "en"))
+                     "su", "la", "rr", "en")
 
 
   expit <- function(eta) {
@@ -110,7 +111,17 @@ if.needed(.result.dir %&% .filename, {
   dat <- snp_attach(.bk.file)$genotypes
 
   set.seed(20231102)
-  startpoint <- sample(1 : (ncol(dat)-10000), size = 7200)[seed]
+  startpoints0 <- sample(1 : (ncol(dat)-10000), size = 7200)
+  # startpoint <- startpoints0[seed]
+  # rm(startpoints0)
+  ## size = the number of total trials we run
+
+  # for complement trials
+  startpoints <- sample(1 : ncol(dat) - pp, size = 4000)
+  ## size > 3600 in order to make new startpoints greater than 3600
+  startpoints <- startpoints[!startpoints %in% startpoints0]
+  startpoint <- startpoints[seed - 5400]
+  rm(startpoints0, startpoints)
   # size = the number of total trials we run
 
   ## sub-sample individuals
@@ -220,27 +231,28 @@ if.needed(.result.dir %&% .filename, {
   })
 
 
+  ### Comparison: SuSiE
+  res_su <- susie(X = X[, -ncol(X)], y = y)
+
   ### Comparison: GLMNET
   # Lasso
-  res_la <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 1)
+  res_la <- cv.glmnet(x = X[, -ncol(X)], y, family = "binomial", alpha = 1)
   # Ridge regression
-  res_rr <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 0)
+  res_rr <- cv.glmnet(x = X[, -ncol(X)], y, family = "binomial", alpha = 0)
   # Elastic net: alpha=0.5
-  res_en <- cv.glmnet(x = X[, -(pp+1)], y, family = "binomial", alpha = 0.5)
+  res_en <- cv.glmnet(x = X[, -ncol(X)], y, family = "binomial", alpha = 0.5)
 
 
   ##############################################################################
   extract_pip <- function(gs_res) {
     if (is.null(gs_res)) {
       # gs is not fitted due to certain results
-      pip <- rep(NA, times = ncol(X))
+      pip <- rep(NA, times = pp)
     }
     else if (class(gs_res) %in% "gsusie"){
       pip <- gs_res$pip
       names(pip) <- names(gs_res$pip)
-      p <- length(pip)
-      # reorder PIP such that the first argument is the intercept X0.
-      pip <- pip[c(p, 1:(p - 1))]
+      pip <- pip[-length(pip)]  # remove the PIP of X0 (pip[-length(pip)])
     }
     return(pip)
   }
@@ -259,7 +271,7 @@ if.needed(.result.dir %&% .filename, {
   )
 
   ## save results
-  output$gs_pip <- data.frame(
+  output$pip <- data.frame(
     cbind(extract_pip(res_gs_vn), # move intercept to the front
           extract_pip(res_gs_hb_M),
           extract_pip(res_gs_hb_S),
@@ -267,16 +279,18 @@ if.needed(.result.dir %&% .filename, {
           extract_pip(res_gs_bs_S),
           extract_pip(res_gs_fc1),
           extract_pip(res_gs_fc5),
-          extract_pip(res_gs_fc30)),
-    row.names = paste0("X", 0:pp)
+          extract_pip(res_gs_fc30),
+          res_su$pip),
+    row.names = paste0("X", 1:pp)
   )
-    colnames(output$gs_pip) <- methods_names[startsWith(methods_names, "gs")]
+    colnames(output$pip) <-
+      c(methods_names[startsWith(methods_names, "gs")], "su")
 
   output$gn_coef <- data.frame(
-    cbind(as.numeric(coef(res_la, s = "lambda.min")),
-          as.numeric(coef(res_rr, s = "lambda.min")),
-          as.numeric(coef(res_en, s = "lambda.min"))),
-    row.names = paste0("X", 0:pp)
+    cbind(as.numeric(coef(res_la, s = "lambda.min"))[-1],
+          as.numeric(coef(res_rr, s = "lambda.min"))[-1],
+          as.numeric(coef(res_en, s = "lambda.min"))[-1]),
+    row.names = paste0("X", 1:pp)
   )
   colnames(output$gn_coef) <- c("la", "rr", "en")
 
