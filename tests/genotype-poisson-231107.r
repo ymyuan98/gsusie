@@ -104,17 +104,9 @@ if.needed(.result.dir %&% .filename, {
   dat <- snp_attach(.bk.file)$genotypes
 
   set.seed(20231111)
-  startpoints0 <- sample(1 : (ncol(dat)-10000), size = 7200)
-  # startpoint <- startpoints0[seed]
-  # rm(startpoints0)
-  ## size = the number of total trials we run
-
-  # for complement trials
-  startpoints <- sample(1 : ncol(dat) - pp, size = 4000)
-  ## size > 3600 in order to make new startpoints greater than 3600
-  startpoints <- startpoints[!startpoints %in% startpoints0]
-  startpoint <- startpoints[seed - 5400]
-  rm(startpoints0, startpoints)
+  startpoints0 <- sample(1 : (ncol(dat)-10000), size = 9000)
+  startpoint <- startpoints0[seed]
+  rm(startpoints0)
   # size = the number of total trials we run
 
   ## sub-sample individuals
