@@ -263,15 +263,6 @@ gsusie_coefficients(res_gs_hbM)
 ################################################################################
 
 
-a <- tryCatch({
-  res <- log("log_me")
-}, error = function(err) {
-  res <- 3
-  message("Hi there", err)
-  return(res)
-})
-
-
 
 
 
