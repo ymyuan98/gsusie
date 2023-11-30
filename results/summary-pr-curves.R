@@ -45,7 +45,7 @@ read.sim_results <- function(filename) {
 ########################################################################
 
 results.dir <- "./results/"
-dir.name <- "2023-11-25-genotype-poisson"
+dir.name <- "2023-11-23-genotype-poisson"
 results.filenames <- sort(list.files(path = results.dir%&%dir.name,
                                      full.names = T))
 
@@ -106,9 +106,10 @@ lineplot.auprc <- function(auprcDT, .n, .p, .methods = NULL,
 
   pt <- auprcDT[n == .n & p == .p & (method %in% .methods),
                 .(m.auprc = mean(auprc),
-                  sd.auprc = sd(auprc),
-                  lower = max(mean(auprc) - sd(auprc), 0),
-                  upper = min(mean(auprc) + sd(auprc), 1)),
+                  se.auprc = sd(auprc)/sqrt(.N)),
+                by = .(n, p, h2, method)][,
+                `:=`(lower = max(m.auprc - se.auprc, 0),
+                     upper = min(m.auprc + se.auprc, 1)),
                 by = .(n, p, h2, method)] %>%
     mutate(method = fct_relevel(method, .methods)) %>%
     arrange(desc(method)) %>%
@@ -124,7 +125,6 @@ lineplot.auprc <- function(auprcDT, .n, .p, .methods = NULL,
     geom_line(linewidth = 1, alpha = 0.8) +
     geom_point(size = 3, alpha = 0.8) +
     scale_color_manual(values = myPalette) +
-    # ylim(0, 1) +
     labs(y = "Average AU-PRC", color = "Method", x = "h2") +
     theme_bw()
 
@@ -141,6 +141,8 @@ if (!file.exists(results.dir%&%file.name)) {
   AUPRC.dt <- fread(results.dir %&% file.name)
 }
 
+## check set-up
+sort(unique(AUPRC.dt[,seed-1] %/% 100)+1)
 ######################
 ## Plots
 
@@ -176,11 +178,6 @@ for (nr in 1 : nrow(params_comb)) {
          width = 9, height = 6,
          path = results.dir %&% "AUPRC-plots/"%&%dir.name)
 }
-
-AUPRC.dt[, head(.SD, 2), by = .(method, h2)]
-
-# AUPRC.dt[, .N, by = .(method, h2, n, p)]
-aa <- AUPRC.dt[n == 1000 & p == 2000 & h2 == 0.4]
 
 rm(AUPRC.dt, fig)
 gc()
