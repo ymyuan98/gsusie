@@ -88,10 +88,10 @@ if.needed(.result.dir %&% .filename, {
   ## rg10: ridge with 10 variables ...
   ## en:   elastic net
   ## en10: elastic net with 10 variables
-  methods_names <- c(paste("gs", c("vn", "hb_S", "hb_M", "bs_S", "bs_M",
-                                   "fc30", "fc5", "fc1"),
-                           sep = "_"),
-                     "su", "la", "rr", "en")
+  # methods_names <- c(paste("gs", c("vn", "hb_S", "hb_M", "bs_S", "bs_M",
+  #                                  "fc30", "fc5", "fc1"),
+  #                          sep = "_"),
+  #                    "su", "la", "rr", "en")
 
   #################################
   ## Data generation
@@ -104,11 +104,10 @@ if.needed(.result.dir %&% .filename, {
   dat <- snp_attach(.bk.file)$genotypes
 
   set.seed(20231111)
-  startpoints0 <- sample(1 : (ncol(dat)-10000), size = 9000)
-  startpoint <- startpoints0[seed]
-  rm(startpoints0)
+  startpoint <- sample(1 : (ncol(dat)-10000), size = 9000)[seed]
   # size = the number of total trials we run
 
+  set.seed(startpoint)
   ## sub-sample individuals
   if (nn < 2490) { ii.idx <- sample(1 : 2490, size = nn) }
   X <- dat[ii.idx, startpoint : (startpoint+pp-1)]
@@ -159,26 +158,26 @@ if.needed(.result.dir %&% .filename, {
     message("Huber-M. seed: ", seed, " error: ", err)
   })
 
-  # Bisquare weighting
-  res_gs_bs_S <- tryCatch({
-    gsusie(X, y, family = "poisson",
-           estimate_prior_method = "optim",
-           robust_estimation = T,
-           robust_method = "bisquare",
-           tuning_k = "S")
-  }, error = function(err) {
-    message("Bisquare-S. seed: ", seed, " error: ", err)
-  })
-
-  res_gs_bs_M <- tryCatch({
-    gsusie(X, y, family = "poisson",
-           estimate_prior_method = "optim",
-           robust_estimation = T,
-           robust_method = "bisquare",
-           tuning_k = "M")
-  }, error = function(err) {
-    message("Bisquare-M. seed: ", seed, " error: ", err)
-  })
+  # # Bisquare weighting
+  # res_gs_bs_S <- tryCatch({
+  #   gsusie(X, y, family = "poisson",
+  #          estimate_prior_method = "optim",
+  #          robust_estimation = T,
+  #          robust_method = "bisquare",
+  #          tuning_k = "S")
+  # }, error = function(err) {
+  #   message("Bisquare-S. seed: ", seed, " error: ", err)
+  # })
+  #
+  # res_gs_bs_M <- tryCatch({
+  #   gsusie(X, y, family = "poisson",
+  #          estimate_prior_method = "optim",
+  #          robust_estimation = T,
+  #          robust_method = "bisquare",
+  #          tuning_k = "M")
+  # }, error = function(err) {
+  #   message("Bisquare-M. seed: ", seed, " error: ", err)
+  # })
 
   # Weight dropped by fractions - 0.3
   res_gs_fc30 <- tryCatch({
@@ -223,7 +222,7 @@ if.needed(.result.dir %&% .filename, {
   # Lasso
   res_la <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 1)
   # Ridge regression
-  res_rr <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 0)
+  # res_rr <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 0)
   # Elastic net: alpha=0.5
   res_en <- cv.glmnet(x = X[, -ncol(X)], y, family = "poisson", alpha = 0.5)
 
@@ -261,8 +260,8 @@ if.needed(.result.dir %&% .filename, {
     cbind(extract_pip(res_gs_vn), # move intercept to the front
           extract_pip(res_gs_hb_M),
           extract_pip(res_gs_hb_S),
-          extract_pip(res_gs_bs_M),
-          extract_pip(res_gs_bs_S),
+          # extract_pip(res_gs_bs_M),
+          # extract_pip(res_gs_bs_S),
           extract_pip(res_gs_fc1),
           extract_pip(res_gs_fc5),
           extract_pip(res_gs_fc30),
@@ -270,15 +269,16 @@ if.needed(.result.dir %&% .filename, {
     row.names = paste0("X", 1:pp)
   )
     colnames(output$pip) <-
-      c(methods_names[startsWith(methods_names, "gs")], "su")
+      # c(methods_names[startsWith(methods_names, "gs")], "su")
+      c("gs_vn", "gs_hb_M", "gs_hb_S", "gs_fc1", "gs_fc5", "gs_fc30", "su")
 
   output$gn_coef <- data.frame(
     cbind(as.numeric(coef(res_la, s = "lambda.min"))[-1],
-          as.numeric(coef(res_rr, s = "lambda.min"))[-1],
+          # as.numeric(coef(res_rr, s = "lambda.min"))[-1],
           as.numeric(coef(res_en, s = "lambda.min"))[-1]),
     row.names = paste0("X", 1:pp)
   )
-  colnames(output$gn_coef) <- c("la", "rr", "en")
+  colnames(output$gn_coef) <- c("la", "en")
 
   saveRDS(output, file = .result.dir %&% .filename)
 })
