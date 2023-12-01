@@ -1,11 +1,11 @@
 library(tidyverse)
 # library(viridis)
-library(ggsci)
+# library(ggsci)
 library(scales)
 library(data.table)
 library(stringr)
 library(PRROC)
-library(patchwork)
+# library(patchwork)
 setDTthreads(threads = 8)
 
 ########################################################################
@@ -32,6 +32,10 @@ read.sim_results <- function(filename) {
   sim_results <- readRDS(filename)
   out1 <- setDT(sim_results$pip)
   out2 <- setDT(sim_results$gn_coef)
+  if (any(is.na(colnames(out2)))) {
+    message("Warning: a column named NA")
+    out2 <- out2[, .(la, en)]
+  }
   out <- cbind(out1, out2)
   out[, label:=0]
   out[sim_results$setup$effect_idx, label:=1]
@@ -45,20 +49,21 @@ read.sim_results <- function(filename) {
 ########################################################################
 
 results.dir <- "./results/"
-dir.name <- "2023-11-23-genotype-poisson"
+dir.name <- "2023-12-01-genotype-poisson"
 results.filenames <- sort(list.files(path = results.dir%&%dir.name,
                                      full.names = T))
 
 results.dt <- do.call(rbind, lapply(results.filenames, read.sim_results))
 # head(results.dt)
 
+
 ########
 ## Specify methods for comparisons:
 
 if (str_detect(dir.name, "binomial")) {
   print("Ha!!")
-  results.dt <- results.dt[, c("gs_hb_S", "gs_hb_M", "gs_bs_S", "gs_bs_M",
-                               "gs_fc30", "gs_fc5", "gs_fc1"):= NULL]
+  results.dt <- results.dt[, c("gs_fc30", "gs_fc5", "gs_fc1"):= NULL]
+  # "gs_hb_S", "gs_hb_M", "gs_bs_S", "gs_bs_M",
   # methods for comparisons
   methods_name <- c("gs_vn", "su", "la", "en")  # logistic
   # For logistic regression: remove the robust methods
@@ -66,7 +71,7 @@ if (str_detect(dir.name, "binomial")) {
 } else if (str_detect(dir.name, "poisson")) {
   print("Ha Ha!!")
   # For poisson regression: remove gs_bs_S, gs_bs_M from comparison/evaluation
-  results.dt <- results.dt[, c("gs_bs_S", "gs_bs_M"):= NULL]
+  # results.dt <- results.dt[, c("gs_bs_S", "gs_bs_M"):= NULL]
   ## methods for comparison
   methods_name <- c("gs_vn", "gs_hb_M", "su", "la", "en")  # poisson
 }
@@ -161,7 +166,6 @@ if (str_detect(dir.name, "genotype")) {
 }
 
 dir.create(results.dir%&%"AUPRC-plots/"%&%dir.name, recursive = T)
-
 for (nr in 1 : nrow(params_comb)) {
   .n <- params_comb[nr, 1]
   .p <- params_comb[nr, 2]
