@@ -137,7 +137,8 @@ if.needed(.result.dir %&% .filename, {
   res_gs_vn <- tryCatch({
     gsusie(X, y, family = "binomial",
            estimate_prior_method = "optim",
-           robust_estimation = F)
+           robust_estimation = F
+           )
   }, error = function(err) {
     message("Vanilla. seed:", seed, ". error: ", err)
   })
@@ -148,7 +149,7 @@ if.needed(.result.dir %&% .filename, {
   #          estimate_prior_method = "optim",
   #          robust_estimation = T,
   #          robust_method = "huber",
-  #          tuning_k = "S")
+  #          robust_tuning_method = "S")
   # }, error = function(err) {
   #   message("Huber-S. seed: ", seed, " error: ", err)
   # })
@@ -159,7 +160,7 @@ if.needed(.result.dir %&% .filename, {
   #          estimate_prior_method = "optim",
   #          robust_estimation = T,
   #          robust_method = "huber",
-  #          tuning_k = "M")
+  #          robust_tuning_method = "M")
   # }, error = function(err) {
   #   message("Huber-M. seed: ", seed, " error: ", err)
   # })
@@ -170,7 +171,7 @@ if.needed(.result.dir %&% .filename, {
   #          estimate_prior_method = "optim",
   #          robust_estimation = T,
   #          robust_method = "bisquare",
-  #          tuning_k = "S")
+  #          robust_tuning_method = "S")
   # }, error = function(err) {
   #   message("Bisquare-S. seed: ", seed, " error: ", err)
   # })
@@ -180,7 +181,7 @@ if.needed(.result.dir %&% .filename, {
   #          estimate_prior_method = "optim",
   #          robust_estimation = T,
   #          robust_method = "bisquare",
-  #          tuning_k = "M")
+  #          robust_tuning_method = "M")
   # }, error = function(err) {
   #   message("Bisquare-M. seed: ", seed, " error: ", err)
   # })
