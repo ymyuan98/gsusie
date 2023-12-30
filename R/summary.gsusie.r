@@ -44,7 +44,7 @@ summary.gsusie <- function (object, ...) {
   } else
     cs <- NULL
   out <- list(vars = variables,cs = cs)
-  class(out) <- c("summary.gsusie", "list")   ##! summary.susie -> summary.gsusie
+  class(out) <- c("summary.gsusie", "list")   ## summary.susie -> summary.gsusie
   return(out)
 }
 
@@ -79,7 +79,7 @@ print.summary.gsusie <- function (x, ...) {
 #' @param decreasing logical, whether to list the variables
 #'    in decreasing order of PIP values.
 #'
-#' @param cred_int logical, whether to return equal-tailed credible intervels
+#' @param cred_int logical, whether to return equal-tailed credible intervals
 #'
 #' @param coverage numeric, between 0 and 1, the coverage probability
 #'    of credible intervals.
@@ -89,7 +89,7 @@ print.summary.gsusie <- function (x, ...) {
 #'
 #' @method summarize gsusie coefficients
 #'
-#' @export coefficients.gsusie
+#' @export gsusie_coefficients
 #'
 #' @export
 #'

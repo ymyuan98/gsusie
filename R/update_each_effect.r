@@ -20,7 +20,7 @@ update_each_effect <- function(X, y, gs, model,
                                robust_method = "simple",
                                simple_outlier_fraction = 0.01,
                                simple_outlier_thres = NULL,
-                               tuning_k = NULL
+                               robust_tuning_method = NULL
                               ) {
 
   if (!estimate_prior_variance) estimate_prior_method = "none"
@@ -57,13 +57,13 @@ update_each_effect <- function(X, y, gs, model,
       # "huber" method bases on residual rr
       gs$imp_weights <- robust_importance_weights(rr,
                               robust_method = "huber",
-                              tuning_k      = tuning_k,
+                              robust_tuning_method = robust_tuning_method,
                               previous_imp_weights = gs$imp_weights)
     } else if (robust_method == "bisquare") {
       # "bisquare" method bases on residual rr
       gs$imp_weights <- robust_importance_weights(rr,
                               robust_method = "bisquare",
-                              tuning_k      = tuning_k,
+                              robust_tuning_method = robust_tuning_method,
                               previous_imp_weights = gs$imp_weights)
     } else {
       stop("Invalid option for robust_importance_weights method!")

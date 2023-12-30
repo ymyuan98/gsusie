@@ -1,5 +1,10 @@
 #' @title weighted single effect regression
 #'
+#' @description
+#' The WSER function is to compute the posterior distribution of the regression
+#' coefficients of a WSER model.
+#'
+#'
 #' @param weights a (n x 1) array, weights of each subject.
 #' For GLM using iterative weighted linear regression,
 #' \eqn{weights = exp(-logw2)}

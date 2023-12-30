@@ -57,7 +57,7 @@
 #'   fit.}
 #'
 #'
-
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
@@ -447,16 +447,6 @@ gsusie_get_pip <- function(res, prune_by_cs = FALSE, prior_tol = 1e-9) {
         } else {
             include_idx <- 1 : nrow(res$alpha)
         }
-
-        # Only consider variables in reported CS
-        # "The following part is not what we do in the SuSiE paper."
-        # "So by default prune_by_cs = FALSE means we do not run the"
-        # "following code." says by the authors
-
-        # if (!is.null(res$sets$cs_index) && prune_by_cs)
-        #     include_idx <- intersect(include_idx, res$sets$cs_index)
-        # if (is.null(res$sets$cs_index && prune_by_cs))
-        #     include_idx <- numeric(0)
 
         # Now extract relevant rows from alpha matrix
         if (length(include_idx) > 0) {

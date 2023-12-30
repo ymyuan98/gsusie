@@ -1,4 +1,4 @@
-#' @title Initialize a gsusie object using regression coefficients (?)
+#' @title Initialize a gsusie object using regression coefficients
 #'
 #'
 # Set default susie initialization
@@ -34,9 +34,8 @@ init_setup <- function(n, p, L, family,
             sigma02 = coef_prior_variance,               ## prior variance of coefficient b.
             family  = family,
             Xr      = rep(0, n),                         ## linear predictors
-            V       = coef_prior_variance,               ## estimated prior variance(?!)
+            V       = coef_prior_variance,               ## estimated prior variance
             abn_subjects = NULL                          ## indices of abnormal subjects
-            #   logw2   = rep(0, n),   ## monitor (pseudo-)variance of each subject
             )
   if (is.null(null_weight)) {
       gs$null_index <- 0

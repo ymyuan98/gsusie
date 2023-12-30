@@ -1,6 +1,6 @@
 #' @title GSuSiE(gsusie)
 
-#' @description This .r file defines a gsusie function.
+#' @description This .R file defines a gsusie function.
 #' The codes as well as the arguments and descriptions are referenced from
 #' [https://github.com/stephenslab/susieR/blob/master/R/susie.R].
 #' The main difference is that we include \emph{family} that describes the relationship
@@ -16,18 +16,8 @@
 #'   L is set to p.
 #'
 #' @param family A description of error distribution and link function
-#' to be used in the model (similar to the same argument in \code{glm}).
-#' So far, only binomial distribution with logit link and Poisson
-#' distribution with log link are developed.
-#' !!! Refererence to `glm` codes!!!
-#'
-#' @param scaled_prior_variance The prior variance, divided by
-#'  \code{var(y)} (or by \code{(1/(n-1))yty} for
-#'  \code{susie_suff_stat}); that is, the prior variance of each
-#'  non-zero element of b is \code{var(y) * scaled_prior_variance}. The
-#'  value provided should be either a scalar or a vector of length
-#'  \code{L}. If \code{estimate_prior_variance = TRUE}, this provides
-#'  initial estimates of the prior variances.
+#' to be used in the model. So far, only binomial distribution with
+#' logit link and Poisson distribution with log link are developed.
 #'
 #' @param prior_inclusion_prob A vector of length p, in which each entry
 #'  gives the prior probability that corresponding column of X has a
@@ -62,15 +52,40 @@
 #'  and exclude a single effect from PIP computation if the estimated prior
 #'  vairnace is smaller than this tolerance value.
 #'
-#'  #' Check the logic of parameters related to coef_prior_variance
+#'  Check the logic of parameters related to coef_prior_variance
+#'
+#' @param robust_estimation If \code{robust_estimation=TRUE},
+#' robust estimation method is applied on the coefficient estimation.
+#'
+#' @param robust_method If \code{robust_est_method = "simple"},
+#' then the 1% observations with the highest weights (i.e. inverse of
+#' pseudo-variance) during coefficient estimation in each iteration.
+#' If \code{robust_method = "huber"}, huber weights are additionally
+#' multiplied to the pseudo-weights in each iteration.
+#' If \code{robust_method = "bisquare"}, (Tukey's) bisquare weights are
+#' additionally multipled to the pseudo-weights in each iteration.
+#'
+#' @param simple_outlier_fraction a value between 0 and 1 (not inclusive),
+#' indicating the fraction of outliers to be removed from each iteration.
+#' Outliers are defined as the subjects who have the top
+#' \code{simple_outlier_fraction}\eqn{\times 100%} highest pseudo-weights.
+#' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
+#' fraction.
+#'
+#' @param simple_outlier_thres a real value, indicating the outliers whose
+#' pseudo-weights exceed this threshold to be removed from each iteration.
+#'
+#' @param robust_tuning_method If \code{robust_tuning_method = "M"},
+#' M-estimation is performed. If \code{robust_tuning_method = "S"},
+#' S-estimation is performed.
 #'
 #' @param null_weight Prior probability of no effect (a number between
 #'  0 and 1, and cannot be exactly 1).
 #'
 #' @param standardize If \code{standardize = TRUE}, standardize the
 #'   columns of X to unit variance prior to fitting (or equivalently
-#'   standardize XtX and Xty to have the same effect). Any column of \code{X}
-#'   that has zero variance is not standardized.
+#'   standardize XtX and Xty to have the same effect).
+#'   Any column of \code{X} that has zero variance is not standardized.
 #'
 #' @param coverage A number between 0 and 1 specifying the
 #'   \dQuote{coverage} of the estimated confidence sets.
@@ -92,15 +107,6 @@
 #' If the number of detected abnormal subjects exceeds
 #' \eqn{abnormal_proportion * nrow(X)}, stop fitting the model.
 #'
-#' @param robust_estimation If \code{robust_estimation=TRUE},
-#' robust estimation method is applied on the coefficient estimation.
-#'
-#' @param robust_method If \code{robust_est_method = "simple"},
-#' then the 1% observations with the highest weights (i.e. inverse of
-#' pseudo-variance) during coefficient estimation in each iteration.
-#' If \code{robust_method = "huber"}, huber weightings are additionally
-#' multiplied to the original weights in each iteration. (TBC?!)
-
 
 gsusie <- function(X, y,
                   maxL = min(10, ncol(X)),
@@ -115,7 +121,7 @@ gsusie <- function(X, y,
                   robust_method = c("huber", "simple", "bisquare"),
                   simple_outlier_fraction = NULL,
                   simple_outlier_thres = NULL,
-                  tuning_k = c("S", "M"),
+                  robust_tuning_method = c("M", "S"),
                   null_weight = 0,
                   standardize = TRUE,
                   coverage = 0.95,
@@ -187,7 +193,7 @@ gsusie <- function(X, y,
 
   # Check GLM family
   model <- list()
-  model$type <- match.arg(family, c("binomial", "poisson"))  # weighted LeastSquare?! ADD THIS OPTION!
+  model$type <- match.arg(family, c("binomial", "poisson"))
   switch(model$type,
         "binomial" =
         {
@@ -240,7 +246,7 @@ gsusie <- function(X, y,
                              robust_method           = robust_method,
                              simple_outlier_fraction = simple_outlier_fraction,
                              simple_outlier_thres    = simple_outlier_thres,
-                             tuning_k                = tuning_k
+                             robust_tuning_method   = robust_tuning_method
                              )
 
     eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
@@ -249,16 +255,13 @@ gsusie <- function(X, y,
     elbo[tt+1] <- get_objective(X, y, gs, model)
 
     if (verbose) {
-      print(tt)
-
-      if (!is.null(gs$abn_subjects)) {
-        cat("Abnormal subjects in this round: \n")
-        print(gs$abn_subjects)
-        print(paste0("Number of abnormal points: ", length(gs$abn_subjects)))
-      }
+      # if (!is.null(gs$abn_subjects)) {
+      #   cat("Abnormal subjects in this round: \n")
+      #   print(gs$abn_subjects)
+      #   print(paste0("Number of abnormal points: ", length(gs$abn_subjects)))
+      # }
 
       cat("ELBO:", elbo[tt+1], "\n")
-      # cat("Loglik:", loglik_exact[tt+1], "\n")
     }
 
     if (abs(elbo[tt + 1] - elbo[tt]) < tol) {

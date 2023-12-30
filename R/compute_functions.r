@@ -2,20 +2,16 @@
 #'
 #' @description This file defines the auxilary computation functions.
 #'
-#' @details \code{compute_colstats} sets three attributes for matrix X:
+#' @details \code{compute_colstats} sets two attributes for matrix X:
 #' \code{attr(X,'scaled:center')} is a p-vector of column means of X if
-#' \code{center=TRUE}, a p-dim vector of zeros otherwise; \code{'attr(X,'scaled:scale')}
-#' is a p-dim vector of column standard deviations of X if \code{scale=TRUE},
-#' a p-dim vector of ones otherwise; \code{'attr(X,'d')} is a p-dim
-#' vector of column sums of \code{X.standardized^2}, where \code{X.standardized}
-#' is the matrix X centered by \code{attr(X,'scaled:center')} and scaled
-#' by \code{attr(X,'scaled:scale')}.
+#' \code{center=TRUE}, a p-dim vector of zeros otherwise;
+#' \code{'attr(X,'scaled:scale')} is a p-dim vector of column standard
+#' deviations of X if \code{scale=TRUE}, a p-dim vector of ones otherwise;
 #'
 #' \code{compute_Xb} offers the matrix multiplication of
 #' an (n x p) matrix \code{X} and a (p x 1) array/matrix {b}, \ie \eqn{Xb}.
 #' The output is a (n x 1) matrix.
 #'
-#' \code{compute_XtWY} offers the matrix multiplication of \eqn{X'WY}
 
 require(Matrix)
 
