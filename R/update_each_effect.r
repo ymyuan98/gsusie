@@ -1,4 +1,3 @@
-#' @title Update each effect once
 #' @param X an n by p matrix of regression variables.
 #' @param y an n vector of response variable.
 #' @param gs a gsusie fit.
