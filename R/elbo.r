@@ -7,6 +7,9 @@
 #' @param mu      a p-dim vector of posterior means
 #' @param sigma12 a p-dim vector of posterior variances
 #'
+#' @returns a value of KL-divergence between the prior and posterior (VA)
+#' distributions of L WSER models.
+#'
 #' @keywords internal
 #'
 KL_prior_v_post <- function(sigma02, pie, alpha, mu, sigma12) {
