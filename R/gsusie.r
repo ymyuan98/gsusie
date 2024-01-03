@@ -1,42 +1,64 @@
-#' @title GSuSiE(gsusie)
-
-#' @description This .R file defines a gsusie function.
-#' The codes as well as the arguments and descriptions are referenced from
-#' [https://github.com/stephenslab/susieR/blob/master/R/susie.R].
-#' The main difference is that we include \emph{family} that describes the relationship
-#' between the error distribution and link function.
+#' @title Generalized Sum of Single-effects (GSuSiE)
 #'
-
+#' @description
+#' Performs a sparse Bayesian variable selection on generalized
+#' linear models using the genaralized sum of single-effects (GSuSiE) model.
+#' This function is currently designed for \emph{Poisson} and \emph{logistic}
+#' regression models, where the response y can be a count type or binary
+#' variable. Codes as well as the arguments and descriptions are referred from
+#' [https://github.com/stephenslab/susieR/blob/master/R/susie.R].
+#' In brief, this function transforms the GLMs into iterative reweighted
+#' least square problems, and then (at each iteration) tries to find the
+#' regression coefficients $\beta$ such that the log-likelihood function
+#' \eqn{\ell(X,y|\beta,\nu^2)=-\frac{1}{2}\sum_{i=1}^n\left(\frac{z_i-x_{i.}
+#' \beta}{\nu}\right)^2} is maximized. Following the \dQuote{susie assumptions},
+#' \eqn{\beta = \sum_{l=1}^L \beta_l}, where each \eqn{\beta_l} is a vector of
+#' length p with one non-zero element. The value of $L$ is fixed and should be
+#' a value of the reasonable upper bound on the number of non-zero effects
+#' to be detected.
+#'
+#' @details
+#' To fit GSuSiE on a Poisson regression model, it is recommended to perform
+#' robust estimation. The robust estimation helps address the
+#' potential negative effect of outliers especially in count data.
+#' M/S-estimation with Huber weights is suggested (by setting
+#' \code{robust_estimation=TRUE}, \code{robust_method="huber"}, and
+#' \code{robust_tuning_method="M"}.
+#' To fit GSuSiE on a logistic regression model, it is recommended not to
+#' perform robust estimation (by default \code{robust_estimation=FALSE}).
+#'
 #' @param X An n by p matrix of covariates.
 #'
 #' @param y The observed responses, a vector of length n.
 #'
-#' @param maxL Maximum number of non-zero effects in the susie
-#'   regression model. If L is larger than the number of covariates, p,
-#'   L is set to p.
+#' @param family A description of error distribution and link function used in
+#' the model. So far, only \emph{binomial distributions with logit link}
+#' (\code{family="binomial"}) and \emph{Poisson distributions with log link}
+#' (\code{family="poisson"}) are developed.
 #'
-#' @param family A description of error distribution and link function
-#' to be used in the model. So far, only binomial distribution with
-#' logit link and Poisson distribution with log link are developed.
+#' @param maxL Maximum number of non-zero effects in the gsusie model. By
+#' default, \code{maxL=10}. If the number of covariates, \emph{p}, is greater
+#' than 10, then set \code{maxL=p}.
 #'
 #' @param prior_inclusion_prob A vector of length p, in which each entry
 #'  gives the prior probability that corresponding column of X has a
 #'  nonzero effect on the outcome, y.
 #'
 #' @param estimate_prior_variance If \code{estimate_prior_variance = TRUE},
-#' the coefficient prior variance is estimated (this is a hyperparameter for
-#' each of the L effects). If provided, (the first element of)
+#' the coefficient prior variance is estimated. If provided, (the first element of)
 #' \code{coef_prior_variance} is then used as an initial value for the
 #' optimization (if it is a vector). When \code{estimate_prior_variance = FALSE},
-#' the prior variance for each of the L effects is determined by the value
+#' the prior variance for each of the \code{maxL} effects is determined by the value
 #' supplied to \code{coef_prior_variance}.
 #'
-#' @param estimate_prior_method
+#' @param estimate_prior_method The method used for estimating prior variance.
+#' When \code{estimate_prior_method="simple"} is used, the likelihood at the
+#' specified prior variance is compared to the likelihood at a variance of zero,
+#' and the setting with the larger likelihood is retained.
 #'
 #' @param coef_prior_variance NULL, or a scalar specifying the prior variance
-#' of coefficient, or a vector of length \code{maxL}. If
-#' \code{coef_prior_variance} is a scalar, assume this value is consistent in
-#' all \code{maxL} sub-models.
+#' of coefficient, or a vector of length \code{maxL}. If it is a scalar, then
+#' this value is consistent in all \eqn{\beta_l}.
 #'
 #' @param check_null_threshold When the prior variance is estimated,
 #'  compare the estimated with the null, and set the prior variance to zero
@@ -52,15 +74,13 @@
 #'  and exclude a single effect from PIP computation if the estimated prior
 #'  vairnace is smaller than this tolerance value.
 #'
-#'  Check the logic of parameters related to coef_prior_variance
-#'
 #' @param robust_estimation If \code{robust_estimation=TRUE},
 #' robust estimation method is applied on the coefficient estimation.
 #'
-#' @param robust_method If \code{robust_est_method = "simple"},
-#' then the 1% observations with the highest weights (i.e. inverse of
-#' pseudo-variance) during coefficient estimation in each iteration.
-#' If \code{robust_method = "huber"}, huber weights are additionally
+#' @param robust_method If \code{robust_method= "simple"},
+#' then the outliers defined by \code{simple_outlier_fraction} or
+#' \code{simple_outlier_thres} are simply removed in each iteration.
+#' If \code{robust_method="huber"}, Huber weights are additionally
 #' multiplied to the pseudo-weights in each iteration.
 #' If \code{robust_method = "bisquare"}, (Tukey's) bisquare weights are
 #' additionally multipled to the pseudo-weights in each iteration.
@@ -97,42 +117,57 @@
 #'
 #' @param max_iters Maximum number of iterations.
 #'
+#' @param na.rm Drop any missing values in y from both X and y.
+#'
 #' @param tol A small, non-negative number specifying the convergence
 #'   tolerance for the IBSS fitting procedure. The fitting procedure
 #'   will halt when the difference in the variational lower bound, or
 #'   \dQuote{ELBO} (the objective function to be maximized), is
 #'   less than \code{tol}.
 #'
-#' @param abnormal_proportion a value between 0 and 1.
+#' @param n_purity Passed as argument \code{n_purity} to [gsusie_get_cs]
+#'
+#' @param abnormal_proportion A value between 0 and 1. Abnormal data point
+#' may arise when transforming the GLM into (iterative re)weighted least square
+#' problems. Currently, the abnormal points are data points whose
+#' pseudo-variances or pseudo-responses are Inf or NAN. If an abnormal point
+#' is detected, it is removed from the current iteration.
 #' If the number of detected abnormal subjects exceeds
-#' \eqn{abnormal_proportion * nrow(X)}, stop fitting the model.
+#' \code{abnormal_proportion * nrow(X)}, stop fitting the model.
+#'
+#' @param track_fit If \code{track_fit=TRUE}, \code{trace} is also returned
+#' containing detailed information about the estimates at each iteration of the
+#' IBSS fitting procedure.
+#'
+#' @param verbose If \code{verbose=TRUE}, the algorithm's progress, and a
+#' summary of the optimization settings, are printed to the console.
 #'
 
 gsusie <- function(X, y,
-                  maxL = min(10, ncol(X)),
-                  family = c("binomial", "poisson"),
-                  prior_inclusion_prob = NULL,
-                  estimate_prior_variance = TRUE,
-                  estimate_prior_method = c("optim", "EM", "simple"),
-                  coef_prior_variance = 1,
-                  check_null_threshold = 0,
-                  prior_tol = 1e-9,
-                  robust_estimation = FALSE,
-                  robust_method = c("huber", "simple", "bisquare"),
-                  simple_outlier_fraction = NULL,
-                  simple_outlier_thres = NULL,
-                  robust_tuning_method = c("M", "S"),
-                  null_weight = 0,
-                  standardize = TRUE,
-                  coverage = 0.95,
-                  min_abs_corr = 0.5,
-                  max_iters = 100,
-                  na.rm = FALSE,
-                  tol = 1e-2,
-                  n_purity = 100,
-                  abnormal_proportion = 0.5,
-                  track_fit = FALSE,
-                  verbose = FALSE) {
+                   family = c("binomial", "poisson"),
+                   maxL = min(10, ncol(X)),
+                   prior_inclusion_prob = NULL,
+                   estimate_prior_variance = TRUE,
+                   estimate_prior_method = c("optim", "EM", "simple"),
+                   coef_prior_variance = 1,
+                   check_null_threshold = 0,
+                   prior_tol = 1e-9,
+                   robust_estimation = FALSE,
+                   robust_method = c("huber", "simple", "bisquare"),
+                   simple_outlier_fraction = NULL,
+                   simple_outlier_thres = NULL,
+                   robust_tuning_method = c("M", "S"),
+                   null_weight = 0,
+                   standardize = TRUE,
+                   coverage = 0.95,
+                   min_abs_corr = 0.5,
+                   max_iters = 100,
+                   na.rm = FALSE,
+                   tol = 1e-2,
+                   n_purity = 100,
+                   abnormal_proportion = 0.5,
+                   track_fit = FALSE,
+                   verbose = FALSE) {
 
   estimate_prior_method = match.arg(estimate_prior_method)
   robust_method = match.arg(robust_method)
