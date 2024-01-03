@@ -15,7 +15,7 @@
 #' @param check_null_threshold Scalar specifying the threshold on the log-scale
 #' to compare likelihood between current estimate and zero (null).
 #'
-#' @return A list with the following elements:
+#' @returns A list with the following elements:
 #'
 #' \item{alpha}{Vector of posterior inclusion probabilities;
 #'  \code{alpha[i]} is posterior probability that the ith coefficient is non-zero.}
