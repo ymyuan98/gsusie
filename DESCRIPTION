@@ -15,7 +15,7 @@ Suggests:
 Description: Implements methods for variable selection in generalized linear 
 model, especially logistic and Poisson regression, based on xxx. The current 
 method is developed from the "Sum of Single Effects" (SuSiE) model proposed 
-by Wang et al (2020) doi 10.1101/501114. This method is compatible for 
+by Wang et al (2020) doi. [10.1101/501114]. This method is compatible for 
 sparse variable selection problem in high-dimensional settings, especially when 
 variables are highly correlated. This method provides summaries such as 
 posterior inclusion probabilities (PIPs) and credible sets to make inferences on 
@@ -23,7 +23,7 @@ which variables should be selected. Additionally, robust estimations are
 provided to avoid the potential affect of outliers to model fitting. The adapted
 iterative Bayesian Stepwise Selection (IBSS) algorithm is combined with 
 iterative reweighted least squared (IRLS) to address GLMs and robust estimation. 
-License: `use_mit_license()`, `use_gpl3_license()` 
+License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
