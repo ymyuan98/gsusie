@@ -27,7 +27,7 @@ KL_prior_v_post <- function(sigma02, pie, alpha, mu, sigma12) {
 }
 
 
-#' @description compute the (estimated) ELBO for the overall model.
+#' @description Compute the (estimated) ELBO for the overall model.
 #' @keywords internal
 #'
 get_objective <- function(X, y, gs, model, abn.rm = FALSE) {
@@ -50,7 +50,7 @@ get_objective <- function(X, y, gs, model, abn.rm = FALSE) {
 
 
 
-#' @description clip the inputs to avoid feeding 0 into log()
+#' @description Clip the inputs to avoid feeding 0 into \code{log()}
 #' @keywords internal
 #'
 clipped <- function(values, tol = 1e-16) {
