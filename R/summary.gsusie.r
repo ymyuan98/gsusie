@@ -5,7 +5,7 @@
 #' [https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R],
 #' except that we change the output class into "summary.gsusie"...(?)
 #'
-#' @param object A gsusie fit
+#' @param object A GSuSiE fit
 #'
 #' @param \dots Additional arguments passed to the generic \code{summary}
 #'  or \code{print.summary} method.
@@ -88,8 +88,6 @@ print.summary.gsusie <- function (x, ...) {
 #'    if \code{digits == NULL}, the output will not be rounded.
 #'
 #' @method summarize gsusie coefficients
-#'
-#' @export gsusie_coefficients
 #'
 #' @export
 #'

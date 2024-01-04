@@ -1,13 +1,60 @@
+#' @title Update each single effect at a time
+#'
 #' @param X an n by p matrix of regression variables.
+#'
 #' @param y an n vector of response variable.
-#' @param gs a gsusie fit.
+#'
+#' @param gs a GSuSiE fit.
+#'
 #' @param model a list containing functions required for
-#' the specific GLM.
+#' the specific generalized linear model.
+#'
 #' @param abnormal_proportion a value between 0 and 1.
 #' If the number of detected abnormal subjects exceeds
 #' \eqn{abnormal_proportion * nrow(X)}, stop fitting the model.
 #'
-
+#' @param estimate_prior_variance Boolean. If \code{TRUE}, the coefficient prior
+#' variance is estimated and \code{coef_prior_variance} is then used as an
+#' initial value for the optimization (if provided). If \code{FALSE}, the prior
+#' variance for each of the \code{maxL} effects is fixed and determined by the
+#' value supplied to \code{coef_prior_variance}.
+#'
+#' @param estimate_prior_method The method used for estimating prior variance.
+#' When \code{estimate_prior_method="simple"} is used, the likelihood at the
+#' specified prior variance is compared to the likelihood at a variance of zero,
+#' and the setting with the larger likelihood is retained.
+#'
+#' @param check_null_threshold When the prior variance is estimated,
+#'  compare the estimated with the null, and set the prior variance to zero
+#'  unless the log-likelihood using the estimate is larger by this threshold
+#'  amount.
+#'
+#' @param robust_estimation If \code{robust_estimation=TRUE},
+#' robust estimation method is applied on the coefficient estimation.
+#'
+#' @param robust_method If \code{robust_method= "simple"},
+#' then the outliers defined by \code{simple_outlier_fraction} or
+#' \code{simple_outlier_thres} are simply removed in each iteration.
+#' If \code{robust_method="huber"}, Huber weights are additionally
+#' multiplied to the pseudo-weights in each iteration.
+#' If \code{robust_method = "bisquare"}, (Tukey's) bisquare weights are
+#' additionally multipled to the pseudo-weights in each iteration.
+#'
+#' @param simple_outlier_fraction a value between 0 and 1, indicating the
+#' fraction of outliers: we define the
+#' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
+#' absolute values (inverse of pseudo-variance) as outliers.
+#' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
+#' fraction.
+#'
+#' @param simple_outlier_thres a real value, indicating the outliers whose
+#' inverse of pseudo-variance exceed this threshold to be removed from the
+#' current iteration.
+#'
+#' @param robust_tuning_method If \code{robust_tuning_method = "M"},
+#' M-estimation is performed. If \code{robust_tuning_method = "S"},
+#' S-estimation is performed.
+#'
 #' @keywords internal
 
 update_each_effect <- function(X, y, gs, model,
@@ -100,7 +147,7 @@ update_each_effect <- function(X, y, gs, model,
           gs$mu[l, ]           <- res$mu
           gs$mu2[l, ]          <- res$mu2
           gs$alpha[l, ]        <- res$alpha
-          gs$betahat[l, ]      <- res$betahat
+          # gs$betahat[l, ]      <- res$betahat
           gs$lbf_variable[l, ] <- res$logABF
           gs$lbf[l]            <- res$logABF_model
           gs$V[l]              <- res$V

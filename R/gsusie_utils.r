@@ -8,36 +8,36 @@
 #' [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R]
 
 
-#' @return \code{susie_get_objective} returns the evidence lower bound
+#' @returns \code{gsusie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model and, optionally, at each
 #' iteration of the IBSS fitting procedure.cs
 #'
-#' \code{susie_get_prior_variance} returns the (estimated or fixed)
+#' \code{gsusie_get_prior_variance} returns the (estimated or fixed)
 #' prior variance parameters.
 #'
-#' \code{susie_get_posterior_mean} returns the posterior mean for the
+#' \code{gsusie_get_posterior_mean} returns the posterior mean for the
 #' regression coefficients of the fitted susie model.
 #'
-#' \code{susie_get_posterior_sd} returns the posterior standard
+#' \code{gsusie_get_posterior_sd} returns the posterior standard
 #' deviation for coefficients of the fitted susie model.
 #'
-#' \code{susie_get_niter} returns the number of model fitting
+#' \code{gsusie_get_niter} returns the number of model fitting
 #' iterations performed.
 #'
-#' \code{susie_get_pip} returns a vector containing the posterior
+#' \code{gsusie_get_pip} returns a vector containing the posterior
 #' inclusion probabilities (PIPs) for all variables.
 #'
-#' \code{susie_get_lfsr} returns a vector containing the average lfsr
+#' \code{gsusie_get_lfsr} returns a vector containing the average lfsr
 #' across variables for each single-effect, weighted by the posterior
 #' inclusion probability (alpha).
 #'
-#' \code{susie_get_posterior_samples} returns a list containing the
+#' \code{gsusie_get_posterior_samples} returns a list containing the
 #' effect sizes samples and causal status with two components: \code{b},
 #' an \code{num_variables} x \code{num_samples} matrix of effect
 #' sizes; \code{gamma}, an \code{num_variables} x \code{num_samples}
 #' matrix of causal status random draws.
 #'
-#' \code{susie_get_cs} returns credible sets (CSs) from a susie fit,
+#' \code{gsusie_get_cs} returns credible sets (CSs) from a susie fit,
 #' as well as summaries of correlation among the variables included in
 #' each CS. If desired, one can filter out CSs that do not meet a
 #' specified \dQuote{purity} threshold; to do this, either \code{X} or
@@ -576,7 +576,6 @@ calc_stderr <- function(X, weights) {
 }
 
 # Return residuals (No such thing!)
-
 # Slim the result of fitted gsusie model
 # Different from that on
 # [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557]

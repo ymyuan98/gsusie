@@ -1,13 +1,13 @@
-#' @title weighted single effect regression
+#' @title Weighted single effect regression
 #'
 #' @description
 #' The WSER function is to compute the posterior distribution of the regression
-#' coefficients of a WSER model.
-#'
+#' coefficients of a WSER model. Reference:
+#' [https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R]
 #'
 #' @param weights a (n x 1) array, weights of each subject.
-#' For GLM using iterative weighted linear regression,
-#' \eqn{weights = exp(-logw2)}
+#' For a generalized linear model using iterative reweighted least squared
+#' approach, \eqn{weights = exp(-logw2)}.
 #'
 #' @param optimize_V The optimization method to use for fitting the prior
 #' variance.
@@ -18,7 +18,8 @@
 #' @returns A list with the following elements:
 #'
 #' \item{alpha}{Vector of posterior inclusion probabilities;
-#'  \code{alpha[i]} is posterior probability that the ith coefficient is non-zero.}
+#'  \code{alpha[i]} is posterior probability that the ith
+#'  coefficient is non-zero.}
 #'
 #' \item{mu}{Vector of posterior means (conditional on inclusion).}
 #'
@@ -85,8 +86,9 @@ weighted_single_effect_regresion <-
 
     # compute log-ABF for each variable
     zscore2 <- betahat^2 / shat2
-    logABF <- 1 / 2 * ((log(shat2) - log(shat2 + V)) + zscore2 * V / (V + shat2))
-    # deal with special case of infinite shat2 (e.g. happens if X does not vary)
+    logABF <- 1/2 * ((log(shat2) - log(shat2 + V)) + zscore2 * V / (V + shat2))
+    # deal with special case of infinite shat2
+    # (e.g. happens if X does not vary)
     logABF[is.infinite(shat2)] <- 0
     maxlogABF <- max(logABF)
 
@@ -102,7 +104,8 @@ weighted_single_effect_regresion <-
     post_mean2 <- post_variance + post_mean^2               # second moment
 
     # ABF for WSER model
-    logABF_model <- maxlogABF + log(sum(w_weighted))  # = log(sum(ABF x prior_weights))
+    logABF_model <- maxlogABF + log(sum(w_weighted))
+    # = log(sum(ABF x prior_weights))
 
     if (optimize_V == "EM") {
       V <- optimize_prior_variance(optimize_V, betahat, shat2,
@@ -114,7 +117,7 @@ weighted_single_effect_regresion <-
     return(list(alpha = alpha,
                 mu = post_mean,
                 mu2 = post_mean2,
-                betahat = betahat,
+                # betahat = betahat,
                 logABF = logABF,
                 logABF_model = logABF_model,
                 V = V
@@ -123,9 +126,10 @@ weighted_single_effect_regresion <-
 
 
 #' Estimate prior variance
-
+#'
 #' In this function, betahat represents the MLE,
 #' and shat2 represents the corresponding variance.
+#' @keywords internal
 optimize_prior_variance <- function(optimize_V, betahat, shat2,
                                     prior_inclusion_prob,
                                     alpha = NULL, post_mean2 = NULL,
@@ -159,11 +163,9 @@ optimize_prior_variance <- function(optimize_V, betahat, shat2,
   ## if (optimize_V == "none"), V is always the pre-assigned coefficient prior
   ## variance and is not compared with any other values.
 
-  # Following instructions at
-  # https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R
-  # set V exactly 0 if that beats the numerical value by check_null_threshold
-  # in loglik. It means that for parsimony reasons we set estimate of V to zero
-  # if its numerical estimate is only "negligibly" different from zero.
+  ## Set V exactly 0 if that beats the numerical value by check_null_threshold
+  ## in loglik. It means that for parsimony reasons we set estimate of V to zero
+  ## if its numerical estimate is only "negligibly" different from zero.
   if (optimfunc.logscale(0, betahat, shat2, prior_inclusion_prob) +
       check_null_threshold >=
       optimfunc.logscale(V, betahat, shat2, prior_inclusion_prob))
@@ -175,6 +177,7 @@ optimize_prior_variance <- function(optimize_V, betahat, shat2,
 
 #' The following is the log-scale of the optimization goal
 #' as a function of prior variance V.
+#' @keywords internal
 optimfunc.logscale <- function(V, betahat, shat2, prior_inclusion_prob) {
 
  # compute log-ABF for each variable
@@ -200,6 +203,7 @@ optimfunc.logscale <- function(V, betahat, shat2, prior_inclusion_prob) {
 
 
 #' The following is the negative of the objective function
+#' @keywords internal
 neg.optimfunc.logscale <- function(lV, betahat, shat2, prior_inclusion_prob) {
   return(-optimfunc.logscale(exp(lV), betahat, shat2, prior_inclusion_prob))
 }

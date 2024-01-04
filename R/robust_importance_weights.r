@@ -1,28 +1,29 @@
 #' @title Robust estimations
 #'
 #' @description
-#' In GLM fitting, outliers, i.e. unexpected values, may occur in both
-#' observations and intermediate procedures, such as weights
+#' When fitting a generalized linear model, outliers, i.e. unexpected values,
+#' may occur in both observations and intermediate procedures, such as weights
 #' (i.e. inverse of pseudo-variance) and pseudo-responses. Hence,
 #' robust estimations are be considered to "down-weigh" the influential points.
 #'
 #' @param values a vector that may contains outliers.
 #' May be weights () or residuals(?!)
 #'
-#' @param method If \code{method = "none"}, then all subjects are assigned
-#' (adjuct) weights 1, i.e. all subjects are included in coefficient estimation.
-#' If \code{method = "simple"},
-#' then \code{simple_outlier_fraction}\eqn{\times 100%}
-#' subjects with the highest (absolute) weights are assigned adjuct weights 0,
-#' i.e. those subjects are excluded from coefficient estimation in the current
-#' iteration; other subjects are assigned adjuct weights 1.
-#' If \code{method = "huber"}, huber weightings are assigned to each subject
-#' based on the "pseudo-residuals" \code{rr}.
+#' @param robust_method If \code{method = "none"}, then all subjects are
+#' included in the coefficient estimation. If \code{method = "simple"},
+#' then the outliers defined by \code{simple_outlier_fraction} or
+#' \code{simple_outlier_thres} are exlucded from the current iteration of
+#' coefficient estimation. If \code{method = "huber"}, huber weights are
+#' assigned to each subject based on the \dQuote{pseudo-residuals} \code{rr}.
 #'
 #' @param simple_outlier_fraction a value between 0 and 1, indicating the
 #' fraction of outliers: we define the
 #' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
-#' absolute values as outliers
+#' absolute values (inverse of pseudo-variance) as outliers.
+#'
+#' @param simple_outlier_thres a real value, indicating the outliers whose
+#' inverse of pseudo-variance exceed this threshold to be removed from the
+#' current iteration.
 #'
 #' @param robust_tuning_method If \code{robust_tuning_method="M"},
 #' then M-estimation is performed. If \code{robust_tuning_method="S"},
@@ -33,8 +34,7 @@
 #' S-estimation. If \param{previous_imp_weights} is NULL, it indicates the
 #' first iteration, and thus S-estimation need to be initialized.
 #'
-#'
-#' @return {imp_weights} The importance weights.
+#' @returns {imp_weights} An vector of length n, the importance weights.
 #' If a subject is to be removed from the current iteration,
 #' its importance weights is 0.
 #'
@@ -71,7 +71,7 @@ robust_importance_weights <- function(
       thres <- simple_outlier_thres
       imp_weights <- 1 * (values <= thres)
     }
-    else { # is.null(simple_outlier_fraction) && is.null(simple_outlier_thres)
+    else {
       stop("Please specify either 'simple_outlier_fraction'",
            "or 'simple_outlier_thres' to perform simple robust estimation!")
     }

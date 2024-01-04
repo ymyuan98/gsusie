@@ -44,12 +44,11 @@
 #'  gives the prior probability that corresponding column of X has a
 #'  nonzero effect on the outcome, y.
 #'
-#' @param estimate_prior_variance If \code{estimate_prior_variance = TRUE},
-#' the coefficient prior variance is estimated. If provided, (the first element of)
-#' \code{coef_prior_variance} is then used as an initial value for the
-#' optimization (if it is a vector). When \code{estimate_prior_variance = FALSE},
-#' the prior variance for each of the \code{maxL} effects is determined by the value
-#' supplied to \code{coef_prior_variance}.
+#' @param estimate_prior_variance Boolean. If \code{TRUE}, the coefficient prior
+#' variance is estimated and \code{coef_prior_variance} is then used as an
+#' initial value for the optimization (if provided). If \code{FALSE}, the prior
+#' variance for each of the \code{maxL} effects is fixed and determined by the
+#' value supplied to \code{coef_prior_variance}.
 #'
 #' @param estimate_prior_method The method used for estimating prior variance.
 #' When \code{estimate_prior_method="simple"} is used, the likelihood at the
@@ -63,11 +62,11 @@
 #' @param check_null_threshold When the prior variance is estimated,
 #'  compare the estimated with the null, and set the prior variance to zero
 #'  unless the log-likelihood using the estimate is larger by this threshold
-#'  amount. For example, if you set
-#'  \code{check_null_threshold = 0.1}, this will "nudge" the estimate
-#'  towards zero when the difference in log-likelihoods is small. A
-#'  note of caution that setting this to a value greater than zero may
-#'  lead the IBSS fitting procedure to occasionally decrease the ELBO.
+#'  amount. For example, if you set \code{check_null_threshold = 0.1},
+#'  this will "nudge" the estimate towards zero when the difference in
+#'  log-likelihoods is small. A note of caution that setting this to a value
+#'  greater than zero may lead the IBSS fitting procedure to occasionally
+#'  decrease the ELBO.
 #'
 #' @param prior_tol When the prior variance is estimated, compare the
 #'  estimated value to \code{prior_tol} at the end of the computation,
@@ -85,15 +84,16 @@
 #' If \code{robust_method = "bisquare"}, (Tukey's) bisquare weights are
 #' additionally multipled to the pseudo-weights in each iteration.
 #'
-#' @param simple_outlier_fraction a value between 0 and 1 (not inclusive),
-#' indicating the fraction of outliers to be removed from each iteration.
-#' Outliers are defined as the subjects who have the top
-#' \code{simple_outlier_fraction}\eqn{\times 100%} highest pseudo-weights.
+#' @param simple_outlier_fraction a value between 0 and 1, indicating the
+#' fraction of outliers: we define the
+#' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
+#' absolute values (inverse of pseudo-variance) as outliers.
 #' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
 #' fraction.
 #'
 #' @param simple_outlier_thres a real value, indicating the outliers whose
-#' pseudo-weights exceed this threshold to be removed from each iteration.
+#' inverse of pseudo-variance exceed this threshold to be removed from the
+#' current iteration.
 #'
 #' @param robust_tuning_method If \code{robust_tuning_method = "M"},
 #' M-estimation is performed. If \code{robust_tuning_method = "S"},
@@ -156,7 +156,8 @@
 #'
 #' \item{lbf_variable} log-Bayes Factor for each variable and single effect.
 #'
-#' \item{family}
+#' \item{family} A generalized linear model family, either \dQuote{binomial} or
+#' \dQuote{poisson}.
 #'
 #' \item{Xr} A vector of length n, equal to \eqn{X %\*% colSums(alpha \* mu)}
 #'
@@ -188,7 +189,6 @@
 #'
 #' @examples
 #' ## A Poisson regression case ------------------------------------------------
-#' \dontrun{
 #' set.seed(20231130)
 #'
 #' # Generative data model
@@ -216,10 +216,8 @@
 #' res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
 #' robust_estimation = T, robust_method = "huber", robust_tuning_method = "M")
 #' summary(res_gs)
-#' }
 #'
 #' ## A logistic regression case -----------------------------------------------
-#' \dontrun{
 #' set.seed(20240103)
 #' # Generative data model
 #' nn <- 1000
@@ -238,9 +236,8 @@
 #' summary(res_gs)
 #' gsusie_coefficients(res_gs)
 #'
-#' }
-
-
+#' @export
+#'
 
 gsusie <- function(X, y,
                    family = c("binomial", "poisson"),
@@ -447,9 +444,9 @@ gsusie <- function(X, y,
   colnames(gs$lbf_variable) <- variable_names
 
   # Drop redundant elements
-  gs$betahat <- NULL
   gs$pie     <- NULL
   gs$sigma02 <- NULL
+  # gs$betahat <- NULL
 
   # For prediction
   gs$X_column_scale_factors  <- attr(X, "scaled:scale")

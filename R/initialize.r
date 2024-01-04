@@ -1,8 +1,8 @@
-#' @title Initialize a gsusie object using regression coefficients
-#'
+#' @title Initialize a GSuSiE object using regression coefficients
 #'
 # Set default susie initialization
 #' @keywords internal
+#'
 init_setup <- function(n, p, L, family,
                        prior_inclusion_prob,
                        coef_prior_variance,

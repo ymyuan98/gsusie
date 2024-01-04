@@ -1,7 +1,7 @@
 #' @title Functions related to binomial model with logistic link
 #'
-#' @description This file defines functions related to binomial model with logistic link,
-#' including (log of) pseudo-variance and pseudo-response
+#' @description This file defines functions related to binomial model with
+#' logistic link, including (log of) pseudo-variance and pseudo-response
 #' that are needed to be calculated during iterative
 #' fitting of the (approximated) weighted linear regression model,
 #' and the exact and approximated log-likelihood.

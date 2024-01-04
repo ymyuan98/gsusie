@@ -1,11 +1,10 @@
 #' @title Functions related to Poisson regression model with log link
 #'
 #' @description This file defines functions related to Poisson regression model
-#' with logistic link,
-#' including (log of) pseudo-variance and pseudo-response
-#' that are needed to be calculated during iterative
-#' fitting of the (approximated) weighted linear regression model,
-#' and the exact and approximated log-likelihood.
+#' with logistic link, including (log of) pseudo-variance and pseudo-response
+#' that are needed to be calculated during iterative fitting of the
+#' (approximated) weighted linear regression model, and the exact and
+#' approximated log-likelihood.
 #'
 #' The functions below output vectors of the same length of y
 #'
