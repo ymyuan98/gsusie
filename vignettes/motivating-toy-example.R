@@ -52,10 +52,15 @@ Eta <- scale(X[,effect_idx, drop=F] %*% as.matrix(c(-2, 0.2)))
 y <- rpois(nn, exp(Eta))
 plot(y)
 plot(exp(scale(log1p(y))))
+
 ## G-SuSiE
 res_gs_vn <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson")
 summary(res_gs_vn)
 gsusie_coefficients(res_gs_vn)
+
+# res_gs_vn2 <- gsusie(cbind(X, 1), y, family = "poisson")
+# summary(res_gs_vn2)
+# gsusie_coefficients(res_gs_vn2)
 
 res_gs_hb_M <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
                       robust_estimation = T,
@@ -63,6 +68,13 @@ res_gs_hb_M <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
                       robust_tuning_method = "M")
 summary(res_gs_hb_M)
 gsusie_coefficients(res_gs_hb_M)
+
+# res_gs_hb_M2 <- gsusie(cbind(X, 1), y, family = "poisson",
+#                        robust_estimation = T,
+#                        robust_method = "huber",
+#                        robust_tuning_method = "M")
+# summary(res_gs_hb_M2)
+# gsusie_coefficients(res_gs_hb_M2)
 
 ## SuSiE
 res_su <- susie(X, exp(scale(log1p(y))))
@@ -73,9 +85,6 @@ gsusie_coefficients(res_su)
 res_la <- glmnet(X, exp(scale(log1p(y))), family = "poisson", lambda = 1)
 coef_la <- data.frame(coef = as.numeric(coefficients(res_la))[-1])
 row.names(coef_la) <- paste0("X", 1 : pp)
-# res_la <- glmnet(X, y, family = "poisson", lambda = 1)
-# coef_la <- data.frame(coef = as.numeric(coefficients(res_la))[-1])
-# row.names(coef_la) <- paste0("X", 1 : pp)
 
 ## Elastic-Net
 res_en <- glmnet(X, exp(scale(log1p(y))), family = "poisson", lambda = 0.5)
