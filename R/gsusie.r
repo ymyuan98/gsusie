@@ -142,6 +142,105 @@
 #' @param verbose If \code{verbose=TRUE}, the algorithm's progress, and a
 #' summary of the optimization settings, are printed to the console.
 #'
+#' @returns A \code{"gsusie"} object with some or all of the following elements:
+#'
+#' \item{alpha} A \code{maxL} by p matrix of posterior inclusion probabilities.
+#'
+#' \item{mu} A \code{maxL} by p matrix of posterior means, conditional on
+#' inclusion.
+#'
+#' \item{mu2} A \code{maxL} by p matrix of posterior second moments, conditional
+#' on inclusion.
+#'
+#' \item{lbf} log-Bayes Factor for each single effect.
+#'
+#' \item{lbf_variable} log-Bayes Factor for each variable and single effect.
+#'
+#' \item{family}
+#'
+#' \item{Xr} A vector of length n, equal to \eqn{X %\*% colSums(alpha \* mu)}
+#'
+#' \item{V} Prior variance of the non-zero elements of \eqn{\beta}
+#'
+#' \item{converged} \code{TRUE} or \code{FALSE} indicating whether the IBSS
+#' converged to a solution within the chosen tolerance level.
+#'
+#' \item{elbo} The value of variational lower bound, or \dQuote{ELBO}, achieved
+#' at each iteration of the IBSS fitting procedure.
+#'
+#' \item{loglik_exact} The value of exact log-likelihood function of the GLM.
+#'
+#' \item{loglik_apprx} The value of approximated log-likelihood function of the
+#' weighted least square model transformed from the corresponding GLM.
+#'
+#' \item{niter} Number of IBSS iterations that were performed.
+#'
+#' \item{sets} Credible sets estimated from model fit.
+#'
+#' \item{pip} A vector of length p giving marginal posterior inclusion
+#' probabilities for all p covariates.
+#'
+#' \item{X_column_scale_factor} A vector of length p giving the scale factor of
+#' each column.
+#'
+#' \item{X_column_center_factor} A vector of length p giving the center factor
+#' of each column
+#'
+#' @examples
+#' ## A Poisson regression case ------------------------------------------------
+#' \dontrun{
+#' set.seed(20231130)
+#'
+#' # Generative data model
+#' nn <- 1000
+#' pp <- 10
+#' X <- matrix(rnorm(nn * pp), ncol = pp)
+#' X[,1:2] <- MASS::mvrnorm(nn, mu = c(0,0),
+#'                          Sigma = matrix(c(1, 0.8, 0.8, 1), nrow = 2))
+#' X[,5:7] <- MASS::mvrnorm(nn, mu = rep(0, 3),
+#'                          Sigma = matrix(c(1, 0.6, 0.9,
+#'                                           0.6, 1, 0.75,
+#'                                           0.9, 0.75, 1),
+#'                                         nrow = 3, byrow = T))
+#' effect_idx <- c(1, 6)
+#' Eta <- scale(X[,effect_idx, drop=F] %*% as.matrix(c(-2, 0.2)))
+#' y <- rpois(nn, exp(Eta))
+#' plot(y)
+#' plot(exp(scale(log1p(y))))
+#'
+#' ## Vanilla G-SuSiE
+#' res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson")
+#' summary(res_gs)
+#'
+#' ## Robust G-SuSiE for Poisson regression
+#' res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
+#' robust_estimation = T, robust_method = "huber", robust_tuning_method = "M")
+#' summary(res_gs)
+#' }
+#'
+#' ## A logistic regression case -----------------------------------------------
+#' \dontrun{
+#' set.seed(20240103)
+#' # Generative data model
+#' nn <- 1000
+#' pp <- 10
+#' X <- matrix(rnorm(nn * pp), ncol = pp)
+#'
+#' effect_idx <- c(1, 6)
+#' bb <- rnorm(2)
+#' Eta <- scale(X[,effect_idx, drop=F] %*% as.matrix(bb))
+#' expit <- function(eta) {
+#'   ifelse(eta > 0, 1 / (1 + exp(-eta)), exp(eta) / (1 + exp(eta)))
+#' }
+#' y <- rbinom(nn, 1, expit(Eta))
+#' ## Vanilla GSuSiE for logistic regression
+#' res_gs <- gsusie(X, y, family = "binomial")
+#' summary(res_gs)
+#' gsusie_coefficients(res_gs)
+#'
+#' }
+
+
 
 gsusie <- function(X, y,
                    family = c("binomial", "poisson"),
@@ -281,7 +380,7 @@ gsusie <- function(X, y,
                              robust_method           = robust_method,
                              simple_outlier_fraction = simple_outlier_fraction,
                              simple_outlier_thres    = simple_outlier_thres,
-                             robust_tuning_method   = robust_tuning_method
+                             robust_tuning_method    = robust_tuning_method
                              )
 
     eta_cur <- compute_Xb(X, colSums(gs$mu * gs$alpha))
@@ -290,11 +389,10 @@ gsusie <- function(X, y,
     elbo[tt+1] <- get_objective(X, y, gs, model)
 
     if (verbose) {
-      # if (!is.null(gs$abn_subjects)) {
-      #   cat("Abnormal subjects in this round: \n")
-      #   print(gs$abn_subjects)
-      #   print(paste0("Number of abnormal points: ", length(gs$abn_subjects)))
-      # }
+      if (!is.null(gs$abn_subjects)) {
+        cat("Abnormal subjects in this round: \n")
+        print(gs$abn_subjects)
+      }
 
       cat("ELBO:", elbo[tt+1], "\n")
     }
@@ -346,8 +444,12 @@ gsusie <- function(X, y,
   colnames(gs$alpha) <- variable_names
   colnames(gs$mu)    <- variable_names
   colnames(gs$mu2)   <- variable_names
-  colnames(gs$betahat)      <- variable_names
   colnames(gs$lbf_variable) <- variable_names
+
+  # Drop redundant elements
+  gs$betahat <- NULL
+  gs$pie     <- NULL
+  gs$sigma02 <- NULL
 
   # For prediction
   gs$X_column_scale_factors  <- attr(X, "scaled:scale")
