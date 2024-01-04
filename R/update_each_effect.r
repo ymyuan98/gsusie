@@ -42,7 +42,7 @@
 #'
 #' @param simple_outlier_fraction a value between 0 and 1, indicating the
 #' fraction of outliers: we define the
-#' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
+#' \code{simple_outlier_fraction} percent of subjects with the highest
 #' absolute values (inverse of pseudo-variance) as outliers.
 #' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
 #' fraction.

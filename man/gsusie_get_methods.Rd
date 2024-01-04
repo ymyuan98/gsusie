@@ -2,10 +2,14 @@
 % Please edit documentation in R/gsusie_utils.R
 \name{gsusie_get_objective}
 \alias{gsusie_get_objective}
+\alias{gsusie_get_posterior_samples}
 \alias{gsusie_get_cs}
-\title{Inferences From Fitted G-SuSiE / SuSiE Model}
+\alias{gsusie_get_pip}
+\title{Inferences From Fitted G-SuSiE/SuSiE Model}
 \usage{
 gsusie_get_objective(res, last_only = TRUE, warning_tol = 1e-06)
+
+gsusie_get_posterior_samples(res, num_samples)
 
 gsusie_get_cs(
   res,
@@ -19,8 +23,16 @@ gsusie_get_cs(
   n_purity = 100,
   use_rfast
 )
+
+gsusie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 }
 \arguments{
+\item{res}{A susie fit, an output from \code{\link{susie}}
+or \code{\link{gsusie}}.}
+
+\item{num_samples}{The number of draws from the posterior
+distribution.}
+
 \item{X}{n by p matrix of values of p variables (covariates) in
 n samples. When provided, correlation between variables will be
 computed and used to remove CSs whose minimum correlation among
@@ -53,6 +65,12 @@ this number, the CS variables are randomly subsampled.}
 
 \item{use_rfast}{Use the Rfast package for purity calculations.
 By default \code{use_rfast = TRUE} if the Rfast package is installed.}
+
+\item{prune_by_cs}{Whether or not to ignore single effects not in
+a reported CS when calculating PIP.}
+
+\item{prior_tol}{Filter out effects having estimated prior variance
+smaller than this threshold.}
 }
 \value{
 \code{gsusie_get_objective} returns the evidence lower bound

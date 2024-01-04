@@ -24,6 +24,13 @@ then the outliers defined by \code{simple_outlier_fraction} or
 coefficient estimation. If \code{method = "huber"}, huber weights are
 assigned to each subject based on the \dQuote{pseudo-residuals} \code{rr}.}
 
+\item{simple_outlier_fraction}{a value between 0 and 1, indicating the
+fraction of outliers: we define the
+\code{simple_outlier_fraction} percent of subjects with the highest
+absolute values (inverse of pseudo-variance) as outliers.
+By default, \code{simple_outlier_fraction=NULL} does not set any outlier
+fraction.}
+
 \item{simple_outlier_thres}{a real value, indicating the outliers whose
 inverse of pseudo-variance exceed this threshold to be removed from the
 current iteration.}

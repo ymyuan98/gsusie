@@ -91,6 +91,13 @@ multiplied to the pseudo-weights in each iteration.
 If \code{robust_method = "bisquare"}, (Tukey's) bisquare weights are
 additionally multipled to the pseudo-weights in each iteration.}
 
+\item{simple_outlier_fraction}{a value between 0 and 1, indicating the
+fraction of outliers: we define the
+\code{simple_outlier_fraction} percent of subjects with the highest
+absolute values (inverse of pseudo-variance) as outliers.
+By default, \code{simple_outlier_fraction=NULL} does not set any outlier
+fraction.}
+
 \item{simple_outlier_thres}{a real value, indicating the outliers whose
 inverse of pseudo-variance exceed this threshold to be removed from the
 current iteration.}

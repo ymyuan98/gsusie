@@ -12,9 +12,7 @@
 #' an (n x p) matrix \code{X} and a (p x 1) array/matrix {b}, \ie \eqn{Xb}.
 #' The output is a (n x 1) matrix.
 #'
-
-require(Matrix)
-
+#'
 #' @keywords internal
 #'
 compute_colstats <- function(X, center = FALSE, scale = TRUE) {

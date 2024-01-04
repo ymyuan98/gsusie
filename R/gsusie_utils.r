@@ -1,13 +1,12 @@
 #' @rdname gsusie_get_methods
 
-#' @title Inferences From Fitted G-SuSiE / SuSiE Model
-
+#' @title Inferences From Fitted G-SuSiE/SuSiE Model
+#'
 #' @description These functions access basic properties or
 #' draw inference from a fitted susie/gsusie model.
 #' The codes and descriptions below are copied from
 #' [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R]
-
-
+#'
 #' @returns \code{gsusie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model and, optionally, at each
 #' iteration of the IBSS fitting procedure.cs
@@ -174,8 +173,8 @@ gsusie_get_lfsr <- function(res) {
     neg_prob <- 1 - pos_prob
     return(1 - rowSums(res$alpha * t(pmax(pos_prob, neg_prob))))
 }
-
-
+#'
+#' @rdname gsusie_get_methods
 #'
 #' @param res A susie fit, an output from \code{\link{susie}}
 #' or \code{\link{gsusie}}.
@@ -414,6 +413,7 @@ get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, max = FALSE) {
   return(cs_corr)
 }
 
+#' @rdname gsusie_get_methods
 #'
 #' @param prune_by_cs Whether or not to ignore single effects not in
 #'   a reported CS when calculating PIP.

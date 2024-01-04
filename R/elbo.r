@@ -1,6 +1,11 @@
-# ELBO = Expected loglik + KL(g(b)||q(b)).
-# This function is to compute the second part of ELBO of the lth WSER model
-#
+#' @title Compute Evidence of Lower Bounds (ELBO)
+#'
+#' @rdname elbo
+#'
+#' @description
+#' This function is to compute the second part of ELBO of the lth WSER model
+#' ELBO = Expected loglik + KL(g(b)||q(b)).
+#'
 #' @param sigma02 a scalar, prior variance of coefficient
 #' @param pie     a p-dim vector of prior inclusion probabilities
 #' @param alpha   a p-dim vector of posterior inclusion probabilities
@@ -26,7 +31,7 @@ KL_prior_v_post <- function(sigma02, pie, alpha, mu, sigma12) {
   return(rowSums(res))
 }
 
-
+#' @rdname elbo
 #' @description Compute the (estimated) ELBO for the overall model.
 #' @keywords internal
 #'
@@ -49,7 +54,7 @@ get_objective <- function(X, y, gs, model, abn.rm = FALSE) {
 }
 
 
-
+#' @rdname elbo
 #' @description Clip the inputs to avoid feeding 0 into \code{log()}
 #' @keywords internal
 #'
