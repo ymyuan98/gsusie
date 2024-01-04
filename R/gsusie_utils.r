@@ -57,7 +57,6 @@
 #'   fit.}
 #'
 #'
-#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
@@ -71,8 +70,6 @@ gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
         return(res$elbo)
 }
 
-
-#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
@@ -101,8 +98,6 @@ gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
   return(llogw2)
 }
 
-
-#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
@@ -126,7 +121,6 @@ gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
         return(numeric(ncol(res$mu)))
 }
 
-#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
@@ -154,15 +148,14 @@ gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
     }
 }
 
-
-#' @rdname gsusie_get_methods
+#'
 #' @export
 #'
 gsusie_get_niter <- function(res) {
     return(res$niter)
 }
 
-#' @rdname gsusie_get_methods
+#'
 #' @export
 #'
 gsusie_get_prior_variance <- function(res) {
@@ -170,7 +163,7 @@ gsusie_get_prior_variance <- function(res) {
 }
 
 
-#' @rdname gsusie_get_methods
+#'
 #' @importFrom stats pnorm
 #' @export
 #'
@@ -183,7 +176,6 @@ gsusie_get_lfsr <- function(res) {
 }
 
 
-#' @rdname gsusie_get_methods
 #'
 #' @param res A susie fit, an output from \code{\link{susie}}
 #' or \code{\link{gsusie}}.
@@ -388,7 +380,7 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
 #'   correlations. When \code{Max = TRUE}, return only the maximum
 #'   absolute correlation among all pairs of correlations.
 #'
-#' @return A matrix of correlations between CSs, or the maximum
+#' @returns A matrix of correlations between CSs, or the maximum
 #'   absolute correlation when \code{max = TRUE}.
 #'
 #' @export
@@ -422,7 +414,6 @@ get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, max = FALSE) {
   return(cs_corr)
 }
 
-#' @rdname gsusie_get_methods
 #'
 #' @param prune_by_cs Whether or not to ignore single effects not in
 #'   a reported CS when calculating PIP.

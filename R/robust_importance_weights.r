@@ -20,6 +20,8 @@
 #' fraction of outliers: we define the
 #' \code{simple_outlier_fraction}\eqn{\times 100%} of subjects with the highest
 #' absolute values (inverse of pseudo-variance) as outliers.
+#' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
+#' fraction.
 #'
 #' @param simple_outlier_thres a real value, indicating the outliers whose
 #' inverse of pseudo-variance exceed this threshold to be removed from the

@@ -87,8 +87,6 @@ print.summary.gsusie <- function (x, ...) {
 #' @param digits integer indicating the number of decimal places to be used.
 #'    if \code{digits == NULL}, the output will not be rounded.
 #'
-#' @method summarize gsusie coefficients
-#'
 #' @export
 #'
 gsusie_coefficients <- function(object, vars = NULL,
