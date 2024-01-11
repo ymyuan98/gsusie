@@ -1,2 +1,5 @@
 ^gsusie\.Rproj$
 ^\.Rproj\.user$
+^inst/motivating-examples
+^inst/simulations
+^LICENSE\.md$
