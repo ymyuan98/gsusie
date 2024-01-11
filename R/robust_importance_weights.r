@@ -1,13 +1,13 @@
 #' @title Robust estimations
 #'
-#' @description
-#' When fitting a generalized linear model, outliers, i.e. unexpected values,
-#' may occur in both observations and intermediate procedures, such as weights
-#' (i.e. inverse of pseudo-variance) and pseudo-responses. Hence,
-#' robust estimations are be considered to "down-weigh" the influential points.
+#' @description When fitting a generalized linear model, outliers, i.e.
+#' unexpected values, may occur in both observations and intermediate
+#' procedures, such as weights (i.e. inverse of pseudo-variance) and
+#' pseudo-responses. Hence, robust estimations are be considered to "down-weigh"
+#' the influential points.
 #'
 #' @param values a vector that may contains outliers.
-#' May be weights () or residuals(?!)
+#' May be weights (inverse of pseudo-variance) or residuals(?!)
 #'
 #' @param robust_method If \code{method = "none"}, then all subjects are
 #' included in the coefficient estimation. If \code{method = "simple"},
@@ -33,12 +33,14 @@
 #'
 #' @param previous_imp_weights importance weights in the previous iteration,
 #' used to calculate the importance weights in the current iteration for the
-#' S-estimation. If \param{previous_imp_weights} is NULL, it indicates the
+#' S-estimation. If \code{previous_imp_weights} is NULL, it indicates the
 #' first iteration, and thus S-estimation need to be initialized.
 #'
 #' @returns {imp_weights} An vector of length n, the importance weights.
 #' If a subject is to be removed from the current iteration,
 #' its importance weights is 0.
+#'
+#' @importFrom stats quantile
 #'
 #' @keywords internal
 #'

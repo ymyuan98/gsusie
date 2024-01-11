@@ -5,7 +5,22 @@
 #' @description These functions access basic properties or
 #' draw inference from a fitted susie/gsusie model.
 #' The codes and descriptions below are copied from
-#' [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R]
+#' <https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R>
+#'
+#' @param res A gsusie fit, typically an output from
+#'   \code{\link{gsusie}} or one of its variants. For
+#'   \code{gsusie_get_pip} and \code{gsusie_get_cs}, this may instead be
+#'   the posterior inclusion probability matrix, \code{alpha}.
+#'
+#' @param last_only If \code{last_only = FALSE}, return the ELBO from
+#'   all iterations; otherwise return the ELBO from the last iteration
+#'   only.
+#'
+#' @param warning_tol Warn if ELBO is decreasing by this
+#'   tolerance level.
+#'
+#' @param scale Boolean,
+#'   indicates whether input \code{X} needs to be scaled or not.
 #'
 #' @returns \code{gsusie_get_objective} returns the evidence lower bound
 #' (ELBO) achieved by the fitted susie model and, optionally, at each
@@ -55,7 +70,6 @@
 #'   (number between 1 and L) of each reported CS in the supplied susie
 #'   fit.}
 #'
-#'
 #' @export
 #'
 gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
@@ -69,10 +83,10 @@ gsusie_get_objective <- function(res, last_only = TRUE, warning_tol = 1e-6) {
         return(res$elbo)
 }
 
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
-  # Any warning_tol for outliers?
 
   if (is.null(res$alpha) || is.null(res$mu)) stop("Please specify a case.")
   if (is.null(X)) stop("Please enter data matrix X.")
@@ -97,6 +111,7 @@ gsusie_get_log_pseudo_variance <- function(res, X = NULL, scale = TRUE) {
   return(llogw2)
 }
 
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
@@ -120,6 +135,7 @@ gsusie_get_posterior_mean <- function(res, prior_tol = 1e-9) {
         return(numeric(ncol(res$mu)))
 }
 
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
@@ -147,14 +163,14 @@ gsusie_get_posterior_sd <- function(res, prior_tol = 1e-9) {
     }
 }
 
-#'
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_niter <- function(res) {
     return(res$niter)
 }
 
-#'
+#' @rdname gsusie_get_methods
 #' @export
 #'
 gsusie_get_prior_variance <- function(res) {
@@ -162,7 +178,7 @@ gsusie_get_prior_variance <- function(res) {
 }
 
 
-#'
+#' @rdname gsusie_get_methods
 #' @importFrom stats pnorm
 #' @export
 #'
@@ -175,7 +191,6 @@ gsusie_get_lfsr <- function(res) {
 }
 #'
 #' @rdname gsusie_get_methods
-#'
 #' @param res A susie fit, an output from \code{\link{susie}}
 #' or \code{\link{gsusie}}.
 #'
@@ -259,14 +274,13 @@ gsusie_get_posterior_samples <- function(res, num_samples) {
 #'      When the number of variables included in the CS is greater than
 #'      this number, the CS variables are randomly subsampled.
 #'
-#' @param use_rfast Use the Rfast package for purity calculations.
-#'      By default \code{use_rfast = TRUE} if the Rfast package is installed.
-#'
 #' @export
 #'
 gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE,
-                         check_symmetric = TRUE, n_purity = 100, use_rfast) {
+                         check_symmetric = TRUE, n_purity = 100
+                         # use_rfast
+                         ) {
 
     if (!is.null(X) && !is.null(Xcorr))
         stop("Only one of X or Xcorr should be specified")
@@ -305,9 +319,9 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
     cs <- cs[include_idx]
     claimed_coverage <- claimed_coverage[include_idx]
 
-    # Compute and filter by "purity"
-    if (missing(use_rfast))
-        use_rfast <- requireNamespace("Rfast", quietly = TRUE)
+    # # Compute and filter by "purity"
+    # if (missing(use_rfast))
+    #     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
     if (is.null(Xcorr) && is.null(X)) {
         names(cs) <- paste0("L", which(include_idx))
         return(list(cs = cs,
@@ -321,7 +335,9 @@ gsusie_get_cs <- function(res, X = NULL, Xcorr = NULL, coverage = 0.95,
             } else {
                 purity <- rbind(purity,
                             matrix(get_purity(cs[[i]], X, Xcorr, squared,
-                                      n_purity, use_rfast), 1, 3))
+                                      n_purity
+                                      # use_rfast
+                                      ), 1, 3))
             }
         }
         purity <- as.data.frame(purity)
@@ -409,7 +425,7 @@ get_cs_correlation <- function(res, X = NULL, Xcorr = NULL, max = FALSE) {
     # }
     # rownames(cs_corr) <- colnames(cs_corr) <- names(res$sets$cs)
 
-  susieR::get_cs_correlation(res, X = X, Xcorr = Xcorr, max = max)
+  cs_corr <- susieR::get_cs_correlation(res, X = X, Xcorr = Xcorr, max = max)
   return(cs_corr)
 }
 
@@ -488,17 +504,18 @@ n_in_CS <- function(res, coverage = 0.9) {
 # Subsample and compute min, mean, median and max abs corr.
 #
 #' @importFrom stats median
-get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100,
-                       use_rfast) {
-    if (missing(use_rfast))
-        use_rfast <- requireNamespace("Rfast", quietly = TRUE)
-    if (use_rfast) {
-        get_upper_tri <- Rfast::upper_tri
-        get_median    <- Rfast::med
-    } else {
+get_purity <- function(pos, X, Xcorr, squared = FALSE, n = 100
+                       # use_rfast
+                       ) {
+    # if (missing(use_rfast))
+    #     use_rfast <- requireNamespace("Rfast", quietly = TRUE)
+    # if (use_rfast) {
+    #     get_upper_tri <- Rfast::upper_tri
+    #     get_median    <- Rfast::med
+    # } else {
         get_upper_tri <- function(R) R[upper.tri(R)]
         get_median    <- stats::median
-    }
+    # }
     if (length(pos) == 1)
         return(c(1, 1, 1))
     else{
@@ -549,16 +566,16 @@ muffled_cov2cor <- function(x) {
 # Check for symmetric matrix
 #' @keywords internal
 is.symmetric_matrix <- function(x) {
-    if (requireNamespace("Rfast", quietly = TRUE))
-        return(Rfast::is.symmetric(x))
-    else
+    # if (requireNamespace("Rfast", quietly = TRUE))
+    #     return(Rfast::is.symmetric(x))
+    # else
        return(isSymmetric(x))
 }
 
 # Compute standard error for MLE regression coefficients
 # under each simple regression model
 # Different from that on
-# [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557]
+# <https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557>
 #' @keywords internal
 calc_stderr <- function(X, weights) {
   XtWX <- colSums(sweep(X * X, 1, weights, "*"))
@@ -566,10 +583,8 @@ calc_stderr <- function(X, weights) {
   return(sqrt(shat2))
 }
 
-# Return residuals (No such thing!)
+
 # Slim the result of fitted gsusie model
-# Different from that on
-# [https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R#L557]
 #' @keywords internal
 gsusie_slim <- function(res) {
     list(alpha = res$alpha, niter = res$niter, mu = res$mu, V = res$V)

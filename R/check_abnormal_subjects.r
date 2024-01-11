@@ -12,6 +12,11 @@
 #' \code{check_abnormal_subjects()} return the indices of abnormal
 #' subjects (if any).
 #'
+#' @param values A vector of length n, to check whether if it contains any
+#' \code{Inf} or \code{NAN}.
+#'
+#' @returns index vector named \code{abn_idx} such that \code{values[abn_idx]}
+#' is either \code{Inf} or \code{NAN}.
 
 check_abnormal_subjects <- function(values) {
     # check if any infinite

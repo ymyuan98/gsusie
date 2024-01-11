@@ -3,7 +3,7 @@
 #' @description
 #' The WSER function is to compute the posterior distribution of the regression
 #' coefficients of a WSER model. Reference:
-#' [https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R]
+#' <https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R>
 #'
 #' @param weights a (n x 1) array, weights of each subject.
 #' For a generalized linear model using iterative reweighted least squared
@@ -129,6 +129,9 @@ weighted_single_effect_regresion <-
 #'
 #' In this function, betahat represents the MLE,
 #' and shat2 represents the corresponding variance.
+#'
+#' @importFrom stats optim
+#'
 #' @keywords internal
 optimize_prior_variance <- function(optimize_V, betahat, shat2,
                                     prior_inclusion_prob,
