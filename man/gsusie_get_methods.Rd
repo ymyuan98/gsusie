@@ -2,12 +2,30 @@
 % Please edit documentation in R/gsusie_utils.R
 \name{gsusie_get_objective}
 \alias{gsusie_get_objective}
+\alias{gsusie_get_log_pseudo_variance}
+\alias{gsusie_get_posterior_mean}
+\alias{gsusie_get_posterior_sd}
+\alias{gsusie_get_niter}
+\alias{gsusie_get_prior_variance}
+\alias{gsusie_get_lfsr}
 \alias{gsusie_get_posterior_samples}
 \alias{gsusie_get_cs}
 \alias{gsusie_get_pip}
 \title{Inferences From Fitted G-SuSiE/SuSiE Model}
 \usage{
 gsusie_get_objective(res, last_only = TRUE, warning_tol = 1e-06)
+
+gsusie_get_log_pseudo_variance(res, X = NULL, scale = TRUE)
+
+gsusie_get_posterior_mean(res, prior_tol = 1e-09)
+
+gsusie_get_posterior_sd(res, prior_tol = 1e-09)
+
+gsusie_get_niter(res)
+
+gsusie_get_prior_variance(res)
+
+gsusie_get_lfsr(res)
 
 gsusie_get_posterior_samples(res, num_samples)
 
@@ -20,8 +38,7 @@ gsusie_get_cs(
   dedup = TRUE,
   squared = FALSE,
   check_symmetric = TRUE,
-  n_purity = 100,
-  use_rfast
+  n_purity = 100
 )
 
 gsusie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
@@ -30,13 +47,26 @@ gsusie_get_pip(res, prune_by_cs = FALSE, prior_tol = 1e-09)
 \item{res}{A susie fit, an output from \code{\link{susie}}
 or \code{\link{gsusie}}.}
 
-\item{num_samples}{The number of draws from the posterior
-distribution.}
+\item{last_only}{If \code{last_only = FALSE}, return the ELBO from
+all iterations; otherwise return the ELBO from the last iteration
+only.}
+
+\item{warning_tol}{Warn if ELBO is decreasing by this
+tolerance level.}
 
 \item{X}{n by p matrix of values of p variables (covariates) in
 n samples. When provided, correlation between variables will be
 computed and used to remove CSs whose minimum correlation among
 variables is smaller than \code{min_abs_corr}.}
+
+\item{scale}{Boolean,
+indicates whether input \code{X} needs to be scaled or not.}
+
+\item{prior_tol}{Filter out effects having estimated prior variance
+smaller than this threshold.}
+
+\item{num_samples}{The number of draws from the posterior
+distribution.}
 
 \item{Xcorr}{p by p matrix of correlations between variables (covariates).
 When provided, it will be used to remove CSs whose minimum correlation
@@ -63,14 +93,8 @@ calculating the correlation (\dQuote{purity}) statistic.
 When the number of variables included in the CS is greater than
 this number, the CS variables are randomly subsampled.}
 
-\item{use_rfast}{Use the Rfast package for purity calculations.
-By default \code{use_rfast = TRUE} if the Rfast package is installed.}
-
 \item{prune_by_cs}{Whether or not to ignore single effects not in
 a reported CS when calculating PIP.}
-
-\item{prior_tol}{Filter out effects having estimated prior variance
-smaller than this threshold.}
 }
 \value{
 \code{gsusie_get_objective} returns the evidence lower bound
@@ -125,5 +149,5 @@ fit.}
 These functions access basic properties or
 draw inference from a fitted susie/gsusie model.
 The codes and descriptions below are copied from
-\link{https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R}
+\url{https://github.com/stephenslab/susieR/blob/master/R/susie_utils.R}
 }

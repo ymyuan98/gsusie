@@ -48,6 +48,6 @@ weighted single effect regression.}
 \description{
 The WSER function is to compute the posterior distribution of the regression
 coefficients of a WSER model. Reference:
-\link{https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R}
+\url{https://github.com/stephenslab/susieR/blob/master/R/single_effect_regression.R}
 }
 \keyword{internal}

@@ -3,48 +3,19 @@
 \name{summary.gsusie}
 \alias{summary.gsusie}
 \alias{print.summary.gsusie}
-\alias{gsusie_coefficients}
 \title{Summarize G-SuSiE Fit.}
 \usage{
 \method{summary}{gsusie}(object, ...)
 
 \method{print}{summary.gsusie}(x, ...)
-
-gsusie_coefficients(
-  object,
-  vars = NULL,
-  decreasing = TRUE,
-  top_n = 10,
-  cred_int = TRUE,
-  coverage = 0.95,
-  digits = 4,
-  ...
-)
 }
 \arguments{
-\item{object}{a gsusie fit}
+\item{object}{A GSuSiE fit}
 
 \item{\dots}{Additional arguments passed to the generic \code{summary}
 or \code{print.summary} method.}
 
 \item{x}{A (g)susie summary.}
-
-\item{vars}{an array of numerical indices or variable names
-presented in the output. If \code{var_names = NULL},
-by default the output contains coefficients of all variables
-if \code{ncol(X)<= 10} or \code{top_n} variables with highest PIPs
-if \code{ncol(X) > 10}.}
-
-\item{decreasing}{logical, whether to list the variables
-in decreasing order of PIP values.}
-
-\item{cred_int}{logical, whether to return equal-tailed credible intervals}
-
-\item{coverage}{numeric, between 0 and 1, the coverage probability
-of credible intervals.}
-
-\item{digits}{integer indicating the number of decimal places to be used.
-if \code{digits == NULL}, the output will not be rounded.}
 }
 \value{
 a list containing a data frame of variables and a data frame
@@ -53,6 +24,6 @@ of credible sets.
 \description{
 \code{summary} method for the \dQuote{gsusie} class
 Almost the same as in
-\link{https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R},
-except that we change the output class into "summary.gsusie"...(?)
+\url{https://github.com/stephenslab/susieR/blob/master/R/summary.susie.R},
+except that we change the output class into "summary.gsusie".
 }

@@ -15,7 +15,7 @@ robust_importance_weights(
 }
 \arguments{
 \item{values}{a vector that may contains outliers.
-May be weights () or residuals(?!)}
+May be weights (inverse of pseudo-variance) or residuals(?!)}
 
 \item{robust_method}{If \code{method = "none"}, then all subjects are
 included in the coefficient estimation. If \code{method = "simple"},
@@ -41,7 +41,7 @@ then S-estimation is performed.}
 
 \item{previous_imp_weights}{importance weights in the previous iteration,
 used to calculate the importance weights in the current iteration for the
-S-estimation. If \param{previous_imp_weights} is NULL, it indicates the
+S-estimation. If \code{previous_imp_weights} is NULL, it indicates the
 first iteration, and thus S-estimation need to be initialized.}
 }
 \value{
@@ -50,9 +50,10 @@ If a subject is to be removed from the current iteration,
 its importance weights is 0.
 }
 \description{
-When fitting a generalized linear model, outliers, i.e. unexpected values,
-may occur in both observations and intermediate procedures, such as weights
-(i.e. inverse of pseudo-variance) and pseudo-responses. Hence,
-robust estimations are be considered to "down-weigh" the influential points.
+When fitting a generalized linear model, outliers, i.e.
+unexpected values, may occur in both observations and intermediate
+procedures, such as weights (i.e. inverse of pseudo-variance) and
+pseudo-responses. Hence, robust estimations are be considered to "down-weigh"
+the influential points.
 }
 \keyword{internal}

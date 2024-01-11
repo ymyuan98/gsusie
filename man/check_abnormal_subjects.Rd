@@ -6,6 +6,14 @@
 \usage{
 check_abnormal_subjects(values)
 }
+\arguments{
+\item{values}{A vector of length n, to check whether if it contains any
+\code{Inf} or \code{NAN}.}
+}
+\value{
+index vector named \code{abn_idx} such that \code{values[abn_idx]}
+is either \code{Inf} or \code{NAN}.
+}
 \description{
 In iterative weighted least square methods,
 each data point is transformed into a corresponding pseudo-response with

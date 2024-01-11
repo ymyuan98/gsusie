@@ -10,9 +10,10 @@ remove_abnormal(abn_index, object)
 \item{abn_index}{an array of indices of abnormal points.}
 
 \item{object}{a matrix or a vector that may contain abnormal points.
-If \param{object} is a matrix, then \param{abn_index} indicates
+If \code{object} is a matrix, then \code{abn_index} indicates
 the rows to be removed.}
 }
 \description{
 Remove abnormal points from the current matrix/array
 }
+\keyword{internal}

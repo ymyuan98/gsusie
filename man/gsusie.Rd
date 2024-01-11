@@ -132,7 +132,7 @@ will halt when the difference in the variational lower bound, or
 \dQuote{ELBO} (the objective function to be maximized), is
 less than \code{tol}.}
 
-\item{n_purity}{Passed as argument \code{n_purity} to \link{gsusie_get_cs}}
+\item{n_purity}{Passed as argument \code{n_purity} to \code{gsusie_get_cs}.}
 
 \item{abnormal_proportion}{A value between 0 and 1. Abnormal data point
 may arise when transforming the GLM into (iterative re)weighted least square
@@ -152,48 +152,49 @@ summary of the optimization settings, are printed to the console.}
 \value{
 A \code{"gsusie"} object with some or all of the following elements:
 
-\item{alpha} A \code{maxL} by p matrix of posterior inclusion probabilities.
+\item{alpha}{A \code{maxL} by p matrix of posterior inclusion probabilities.}
 
-\item{mu} A \code{maxL} by p matrix of posterior means, conditional on
-inclusion.
+\item{mu}{A \code{maxL} by p matrix of posterior means, conditional on
+inclusion.}
 
-\item{mu2} A \code{maxL} by p matrix of posterior second moments, conditional
-on inclusion.
+\item{mu2}{A \code{maxL} by p matrix of posterior second moments, conditional
+on inclusion.}
 
-\item{lbf} log-Bayes Factor for each single effect.
+\item{lbf}{Log-Bayes Factor for each single effect.}
 
-\item{lbf_variable} log-Bayes Factor for each variable and single effect.
+\item{lbf_variable}{Log-Bayes Factor for each variable and single effect.}
 
-\item{family} A generalized linear model family, either \dQuote{binomial} or
-\dQuote{poisson}.
+\item{family}{A generalized linear model family, either \dQuote{binomial} or
+\dQuote{poisson}.}
 
-\item{Xr} A vector of length n, equal to \eqn{X \%\\emph{\% colSums(alpha \} mu)}
+\item{Xr}{A vector of length n, equal to \code{X \%*\% colSums(alpha
+  * mu)}.}
 
-\item{V} Prior variance of the non-zero elements of \eqn{\beta}
+\item{V}{Prior variance of the non-zero elements of \eqn{\beta}.}
 
-\item{converged} \code{TRUE} or \code{FALSE} indicating whether the IBSS
-converged to a solution within the chosen tolerance level.
+\item{converged}{\code{TRUE} or \code{FALSE} indicating whether the IBSS
+converged to a solution within the chosen tolerance level.}
 
-\item{elbo} The value of variational lower bound, or \dQuote{ELBO}, achieved
-at each iteration of the IBSS fitting procedure.
+\item{elbo}{The value of variational lower bound, or \dQuote{ELBO}, achieved
+at each iteration of the IBSS fitting procedure.}
 
-\item{loglik_exact} The value of exact log-likelihood function of the GLM.
+\item{loglik_exact}{The value of exact log-likelihood function of the GLM.}
 
-\item{loglik_apprx} The value of approximated log-likelihood function of the
-weighted least square model transformed from the corresponding GLM.
+\item{loglik_apprx}{The value of approximated log-likelihood function of the
+weighted least square model transformed from the corresponding GLM.}
 
-\item{niter} Number of IBSS iterations that were performed.
+\item{niter}{Number of IBSS iterations that were performed.}
 
-\item{sets} Credible sets estimated from model fit.
+\item{sets}{Credible sets estimated from model fit.}
 
-\item{pip} A vector of length p giving marginal posterior inclusion
-probabilities for all p covariates.
+\item{pip}{A vector of length p giving marginal posterior inclusion
+probabilities for all p covariates.}
 
-\item{X_column_scale_factor} A vector of length p giving the scale factor of
-each column.
+\item{X_column_scale_factor}{A vector of length p giving the scale factor of
+each column.}
 
-\item{X_column_center_factor} A vector of length p giving the center factor
-of each column
+\item{X_column_center_factor}{A vector of length p giving the center factor
+of each column}
 }
 \description{
 Performs a sparse Bayesian variable selection on generalized
@@ -201,20 +202,20 @@ linear models using the genaralized sum of single-effects (GSuSiE) model.
 This function is currently designed for \emph{Poisson} and \emph{logistic}
 regression models, where the response y can be a count type or binary
 variable. Codes as well as the arguments and descriptions are referred from
-\link{https://github.com/stephenslab/susieR/blob/master/R/susie.R}.
+\url{https://github.com/stephenslab/susieR/blob/master/R/susie.R}.
 In brief, this function transforms the GLMs into iterative reweighted
 least square problems, and then (at each iteration) tries to find the
-regression coefficients $\beta$ such that the log-likelihood function
+regression coefficients \eqn{\beta} such that the log-likelihood function
 \eqn{\ell(X,y|\beta,\nu^2)=-\frac{1}{2}\sum_{i=1}^n\left(\frac{z_i-x_{i.}
 \beta}{\nu}\right)^2} is maximized. Following the \dQuote{susie assumptions},
 \eqn{\beta = \sum_{l=1}^L \beta_l}, where each \eqn{\beta_l} is a vector of
-length p with one non-zero element. The value of $L$ is fixed and should be
-a value of the reasonable upper bound on the number of non-zero effects
-to be detected.
+length p with one non-zero element. The value of \eqn{maxL} is fixed and
+should be a value of the reasonable upper bound on the number of non-zero
+effects to be detected.
 }
 \details{
-To fit GSuSiE on a Poisson regression model, it is recommended to perform
-robust estimation. The robust estimation helps address the
+To fit GSuSiE on a Poisson regression model, it is recommended to
+perform robust estimation. The robust estimation helps address the
 potential negative effect of outliers especially in count data.
 M/S-estimation with Huber weights is suggested (by setting
 \code{robust_estimation=TRUE}, \code{robust_method="huber"}, and
@@ -223,6 +224,7 @@ To fit GSuSiE on a logistic regression model, it is recommended not to
 perform robust estimation (by default \code{robust_estimation=FALSE}).
 }
 \examples{
+
 ## A Poisson regression case ------------------------------------------------
 set.seed(20231130)
 
@@ -231,14 +233,14 @@ nn <- 1000
 pp <- 10
 X <- matrix(rnorm(nn * pp), ncol = pp)
 X[,1:2] <- MASS::mvrnorm(nn, mu = c(0,0),
-                         Sigma = matrix(c(1, 0.8, 0.8, 1), nrow = 2))
+                       Sigma = matrix(c(1, 0.8, 0.8, 1), nrow = 2))
 X[,5:7] <- MASS::mvrnorm(nn, mu = rep(0, 3),
-                         Sigma = matrix(c(1, 0.6, 0.9,
-                                          0.6, 1, 0.75,
-                                          0.9, 0.75, 1),
-                                        nrow = 3, byrow = T))
+                       Sigma = matrix(c(1, 0.6, 0.9,
+                                        0.6, 1, 0.75,
+                                        0.9, 0.75, 1),
+                                       nrow = 3, byrow = TRUE))
 effect_idx <- c(1, 6)
-Eta <- scale(X[,effect_idx, drop=F] \%*\% as.matrix(c(-2, 0.2)))
+Eta <- scale(X[,effect_idx, drop=FALSE] \%*\% as.matrix(c(-2, 0.2)))
 y <- rpois(nn, exp(Eta))
 plot(y)
 plot(exp(scale(log1p(y))))
@@ -249,7 +251,8 @@ summary(res_gs)
 
 ## Robust G-SuSiE for Poisson regression
 res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
-robust_estimation = T, robust_method = "huber", robust_tuning_method = "M")
+                 robust_estimation = TRUE, robust_method = "huber",
+                 robust_tuning_method = "M")
 summary(res_gs)
 
 ## A logistic regression case -----------------------------------------------
@@ -261,7 +264,7 @@ X <- matrix(rnorm(nn * pp), ncol = pp)
 
 effect_idx <- c(1, 6)
 bb <- rnorm(2)
-Eta <- scale(X[,effect_idx, drop=F] \%*\% as.matrix(bb))
+Eta <- scale(X[,effect_idx, drop=FALSE] \%*\% as.matrix(bb))
 expit <- function(eta) {
   ifelse(eta > 0, 1 / (1 + exp(-eta)), exp(eta) / (1 + exp(eta)))
 }
@@ -271,4 +274,10 @@ res_gs <- gsusie(X, y, family = "binomial")
 summary(res_gs)
 gsusie_coefficients(res_gs)
 
+}
+\references{
+G. Wang, A. Sarkar, P. Carbonetto and M. Stephens (2020). A simple
+new approach to variable selection in regression, with application
+to genetic fine-mapping. \emph{Journal of the Royal Statistical
+Society, Series B} \bold{82}, 1273-1300 \doi{10.1101/501114}.
 }

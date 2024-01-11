@@ -7,17 +7,17 @@
 compute_colstats(X, center = FALSE, scale = TRUE)
 }
 \description{
-This file defines the auxilary computation functions.
+This file defines the auxiliary computation functions.
 }
 \details{
-\code{compute_colstats} sets two attributes for matrix X:
-\code{attr(X,'scaled:center')} is a p-vector of column means of X if
+\code{compute_colstats} returns a list with two attributes:
+\code{out$cm} is a p-vector of column-wise means of X if
 \code{center=TRUE}, a p-dim vector of zeros otherwise;
-\code{'attr(X,'scaled:scale')} is a p-dim vector of column standard
+\code{out$csd} is a p-dim vector of column-wise standard
 deviations of X if \code{scale=TRUE}, a p-dim vector of ones otherwise;
 
 \code{compute_Xb} offers the matrix multiplication of
-an (n x p) matrix \code{X} and a (p x 1) array/matrix {b}, \ie \eqn{Xb}.
+an (n x p) matrix \code{X} and a (p x 1) array/matrix {b}.
 The output is a (n x 1) matrix.
 }
 \keyword{internal}
