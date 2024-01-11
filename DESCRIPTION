@@ -4,16 +4,17 @@ Title: Sum of Single-Effects Generalized Linear Models
 Version: 0.1.0
 Date: 2024-01-04
 Authors@R: 
-    person("Ming", "Yuan", , emamil = "ming.yuan@stat.ubc.ca", 
+    person("Ming", "Yuan", , email = "ming.yuan@stat.ubc.ca", 
             role = c("aut", "cre"))
 Depends:
     R(>= 3.0.2)
-    Matrix
-    susieR
-    stats
+Imports:
+    susieR,
+    crayon,
+    stats,
+    MASS
 Suggests:
-    knitr,
-    	BiocStyle
+    knitr
 Description: Implements methods for variable selection in generalized linear 
   models (GLMs), especially logistic and Poisson regression. The current 
   method, named "Generalized Sum of Single Effects" (GSuSiE) model, 
@@ -27,7 +28,7 @@ Description: Implements methods for variable selection in generalized linear
   adapted iterative Bayesian Stepwise Selection (IBSS) algorithm is combined 
   with iterative reweighted least squared (IRLS) to address GLMs and robust 
   estimation. 
-License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
+License: MIT + file LICENSE
