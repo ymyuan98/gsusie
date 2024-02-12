@@ -3,9 +3,18 @@
 #' @description This file defines the auxiliary computation functions.
 #'
 #' @details
-#' \code{compute_colstats} returns a list with two attributes:
+#' \code{compute_colstats} computes the mean and standard deviation of each
+#' column.
+#'
+#' @param scale Boolean, indicator to perform standardization or not.
+#' Call \code{scale = TRUE} to compute the column-wise means and standard
+#' deviations (sd). If \code{scale = FALSE}, the output mean and sd vectors are,
+#' respectively, all-0 and all-1 vector of length equal the number of columns of
+#' \eqn{X}.
+#'
+#' It returns a list with two attributes:
 #' \code{out$cm} is a p-vector of column-wise means of X if
-#' \code{center=TRUE}, a p-dim vector of zeros otherwise;
+#' \code{scale=TRUE}, a p-dim vector of zeros otherwise;
 #' \code{out$csd} is a p-dim vector of column-wise standard
 #' deviations of X if \code{scale=TRUE}, a p-dim vector of ones otherwise;
 #'
@@ -17,19 +26,15 @@
 #'
 #' @keywords internal
 #'
-compute_colstats <- function(X, center = FALSE, scale = TRUE) {
+compute_colstats <- function(X, scale = TRUE) {
     out <- list()
 
-    if (!center) {
-        out$cm <- colMeans(X)
-    } else {
-        out$cm <- rep(0, times = ncol(X))
-    }
-
     if (scale) {
-        out$csd <- apply(X, 2, sd)
+      out$cm <- colMeans(X)
+      out$csd <- apply(X, 2, sd)
     } else {
-        out$csd <- rep(1, times = ncol(X))
+      out$cm <- rep(0, times = ncol(X))
+      out$csd <- rep(1, times = ncol(X))
     }
 
     return(out)

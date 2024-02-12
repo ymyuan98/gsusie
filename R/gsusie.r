@@ -316,7 +316,7 @@ gsusie <- function(X, y,
   # otherwise; attr(X,'scaled:scale') is a p-vector of column
   # standard deviations of X if scale=TRUE, a p vector of ones
   # otherwise.
-  colstats <- compute_colstats(X, center = standardize, scale = standardize)
+  colstats <- compute_colstats(X, scale = standardize)
   attr(X, "scaled:center") <- colstats$cm
   attr(X, "scaled:scale")  <- colstats$csd
   if (standardize) {  # standardize the input predictors

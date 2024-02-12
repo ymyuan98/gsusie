@@ -14,7 +14,8 @@ Imports:
     stats,
     MASS
 Suggests:
-    knitr
+    knitr,
+    testthat (>= 3.0.0)
 Description: Implements methods for variable selection in generalized linear 
   models (GLMs), especially logistic and Poisson regression. The current 
   method, named "Generalized Sum of Single Effects" (GSuSiE) model, 
@@ -32,3 +33,4 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 License: MIT + file LICENSE
+Config/testthat/edition: 3
