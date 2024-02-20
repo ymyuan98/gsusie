@@ -4,3 +4,7 @@
 ^inst/simulations
 ^data/genotype
 ^LICENSE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
