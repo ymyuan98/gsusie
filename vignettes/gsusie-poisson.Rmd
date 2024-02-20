@@ -1,10 +1,10 @@
 ---
-title: "Quick Demo 2: Fitting a Poisson Regression Based Generalized SuSiE (GSuSiE) Model"
+title: "Quick Demo 2: Modelling count-type responses via Poisson regression based GSuSiE model"
 author: "Ming Yuan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Quick Demo 2: Fitting a Poisson Regression Based Generalized SuSiE (GSuSiE) Model}
+  %\VignetteIndexEntry{Quick Demo 2: Modelling count-type responses via Poisson regression based GSuSiE model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 editor_options: 
@@ -27,7 +27,7 @@ regression based GSuSiE model dedicated to handling count-type responses.
 ## Get genotype data and generate count-type responses
 
 We simulate response using genotype data from an R package named
-`bigsnpr`.
+[bigsnpr](https://github.com/privefl/bigsnpr/).
 The explanatory variables `X` in this example, 
 saved in `./data/genotype/genotype-subset-2.rds`, 
 is a subset of genotype data containing 2000 successive SNPs of 500 individuals. 
@@ -123,6 +123,8 @@ library(gsusie)
 res_gs <- gsusie(cbind(X, 1), y, family = "poisson")
 ```
 
+## Check the variable selection results
+
 ### Posterior inclusion probabilities
 
 The `print_gsusie_coefficients()` function offers 10 (by default)
@@ -175,7 +177,7 @@ The plot also vividly presents that the null variables `X1321` and `X134 are
 mistakenly selected because of their high PIPs. 
 Therefore, we hope to address these false discoveries.
 
-### Refine a Poisson regression based GSuSiE model via robust estimation
+## Refine a Poisson regression based GSuSiE model via robust estimation
 
 As we know, count data (in the response) usually contains extremely
 large values. These unexpected values may affect the model fitting,
@@ -196,6 +198,8 @@ res_gs_hb <- gsusie(cbind(X, 1), y, family = "poisson",
                     robust_estimation = TRUE,
                     robust_method = "huber")
 ```
+
+### Check the refined variable selection results
 
 The fitted results as well as graphical display are:
 
@@ -272,7 +276,7 @@ via both M- and S-estimation procedures are alike.
 > pseudo-residuals exceed a certain threshold, as it is difficult to
 > tell whether this specific threshold is appropriate or not.
 
-## Suggestions for preprocessing response of count type
+## Suggestions for preprocessing count-type responses
 
 Two cases in the count data response that may result in
 difficulty fitting a Poisson regression based GSuSiE model. One is
@@ -295,4 +299,8 @@ y <- exp(log1p(y))
 and then the new $y$ is plugged into the `gsusie` function to fit a GSuSiE model. 
 This transformation on $y$ is particularly beneficial in reducing the chance of 
 failure in model fitting. 
+
+## References 
+
+
 

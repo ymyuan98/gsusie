@@ -21,7 +21,7 @@ approach to address GLMs and robust estimation.
 
 
 
-## Quick Start
+## Installation
 
 To install this R package directly from Github: 
 ```

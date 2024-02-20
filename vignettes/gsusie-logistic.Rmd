@@ -1,10 +1,10 @@
 ---
-title: "Quick Demo 1: Fitting a Logistic Regression Based Generalized SuSiE (GSuSiE) Model"
+title: "Quick Demo 1: Modelling binary responses via logistic regression based GSuSiE model"
 author: "Ming Yuan"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Quick Demo 1: Fitting a Logistic Regression Based Generalized SuSiE (GSuSiE) Model}
+  %\VignetteIndexEntry{Quick Demo 1: Modelling binary responses via logistic regression based GSuSiE model}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -23,10 +23,10 @@ knitr::opts_chunk$set(
 In this vignette, we show how to apply the `gsusie()` function on a logistic
 regression based GSuSiE model dedicated to modelling binary responses.
 
-## Get genotype data and generate binary outcome
+## Get genotype data and generate binary response
 
 We simulate response using genotype data from an R package named
-`bigsnpr`. 
+[bigsnpr](https://github.com/privefl/bigsnpr/). 
 The explanatory variables `X` in this example, 
 saved in `./data/genotype/genotype-subset-1.rds`, 
 is a subset of genotype data containing 2000 successive SNPs of 500 individuals. 
@@ -119,6 +119,8 @@ library(gsusie)
 res_gs <- gsusie(cbind(X, 1), y, family = "binomial")
 ```
 
+## Check the variable selection results
+
 ### Posterior inclusion probabilities
 
 The `print_gsusie_coefficients()` function offers 10 (by default) variables
@@ -174,5 +176,5 @@ what's worse, those robust approaches could be harmful.
 That is because, unlike the count data in which some big numbers may occur,
 the distribution of a binary response does not spread out; 
 the value of a binary response is just one or zero. 
-As a result, robust estimation is unnecessary. 
+As a result, robust estimation is unnecessary in this case. 
 
