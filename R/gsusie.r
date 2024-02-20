@@ -87,15 +87,22 @@
 #' \code{simple_outlier_fraction} percent of subjects with the highest
 #' absolute values (inverse of pseudo-variance) as outliers.
 #' By default, \code{simple_outlier_fraction=NULL} does not set any outlier
-#' fraction.
+#' fraction. Either \code{simple_outlier_fraction} or
+#' \code{simple_outlier_thres} should be specified when
+#' \code{robust_method = "simple"}.
 #'
 #' @param simple_outlier_thres a real value, indicating the outliers whose
 #' inverse of pseudo-variance exceed this threshold to be removed from the
-#' current iteration.
+#' current iteration. Either \code{simple_outlier_fraction} or
+#' \code{simple_outlier_thres} should be specified when
+#' \code{robust_method = "simple"}.
 #'
 #' @param robust_tuning_method If \code{robust_tuning_method = "M"},
 #' M-estimation is performed. If \code{robust_tuning_method = "S"},
-#' S-estimation is performed.
+#' S-estimation is performed. This argument specifies the tuning method,
+#' i.e., the method for defining outliers in each iteration, when applying
+#' Huber or Bisquare reweighting method (\code{robust_method = "huber"} or
+#' \code{robust_method = "bisquare"}).
 #'
 #' @param null_weight Prior probability of no effect (a number between
 #'  0 and 1, and cannot be exactly 1).
@@ -195,6 +202,7 @@
 #' @examples
 #'
 #' ## A Poisson regression case ------------------------------------------------
+#' \dontrun{
 #' set.seed(20231130)
 #'
 #' # Generative data model
@@ -215,17 +223,26 @@
 #' plot(exp(scale(log1p(y))))
 #'
 #' ## Vanilla G-SuSiE
+#' # res_gs <- gsusie(cbind(X, 1), y, family = "poisson")
 #' res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson")
 #' summary(res_gs)
+#' print_gsusie_coefficients(res_gs)
 #'
 #' ## Robust G-SuSiE for Poisson regression
+#' # res_gs <- gsusie(cbind(X, 1), y, family = "poisson",
+#' #                 robust_estimation = TRUE, robust_method = "huber",
+#' #                 robust_tuning_method = "M")
 #' res_gs <- gsusie(cbind(X, 1), exp(scale(log1p(y))), family = "poisson",
 #'                  robust_estimation = TRUE, robust_method = "huber",
 #'                  robust_tuning_method = "M")
 #' summary(res_gs)
+#' print_gsusie_coefficients(res_gs)
+#' }
+#'
 #'
 #' ## A logistic regression case -----------------------------------------------
-#' set.seed(20240103)
+#' \dontrun{
+#' #' set.seed(20240103)
 #' # Generative data model
 #' nn <- 1000
 #' pp <- 10
@@ -241,7 +258,8 @@
 #' ## Vanilla GSuSiE for logistic regression
 #' res_gs <- gsusie(X, y, family = "binomial")
 #' summary(res_gs)
-#' gsusie_coefficients(res_gs)
+#' print_gsusie_coefficients(res_gs)
+#' }
 #'
 #' @export
 #'
@@ -436,24 +454,23 @@ gsusie <- function(X, y,
   # Names
   if (!is.null(colnames(X))) {
     variable_names <- colnames(X)
-  } else {
-    variable_names <- paste0("X", 1:p)
+
+    if (!is.null(null_weight)) {
+      variable_names[length(variable_names)] <- "null"
+      names(gs$pip) <- variable_names[-p]
+    } else {
+      names(gs$pip) <- variable_names
+    }
+
+    colnames(gs$alpha) <- variable_names
+    colnames(gs$mu)    <- variable_names
+    colnames(gs$mu2)   <- variable_names
+    colnames(gs$lbf_variable) <- variable_names
   }
-  if (!is.null(null_weight)) {
-    variable_names[length(variable_names)] <- "null"
-    names(gs$pip) <- variable_names[-p]
-  } else {
-    names(gs$pip) <- variable_names
-  }
-  colnames(gs$alpha) <- variable_names
-  colnames(gs$mu)    <- variable_names
-  colnames(gs$mu2)   <- variable_names
-  colnames(gs$lbf_variable) <- variable_names
 
   # Drop redundant elements
   gs$pie     <- NULL
   gs$sigma02 <- NULL
-  # gs$betahat <- NULL
 
   # For prediction
   gs$X_column_scale_factors  <- attr(X, "scaled:scale")

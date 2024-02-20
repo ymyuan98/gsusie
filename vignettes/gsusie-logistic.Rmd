@@ -1,0 +1,178 @@
+---
+title: "Quick Demo 1: Fitting a Logistic Regression Based Generalized SuSiE (GSuSiE) Model"
+author: "Ming Yuan"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quick Demo 1: Fitting a Logistic Regression Based Generalized SuSiE (GSuSiE) Model}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  fig.width = 5, fig.height = 4, fig.align = "center", fig.cap = "&nbsp;", 
+  dpi = 120
+)
+```
+
+In this vignette, we show how to apply the `gsusie()` function on a logistic
+regression based GSuSiE model dedicated to modelling binary responses.
+
+## Get genotype data and generate binary outcome
+
+We simulate response using genotype data from an R package named
+`bigsnpr`. 
+The explanatory variables `X` in this example, 
+saved in `./data/genotype/genotype-subset-1.rds`, 
+is a subset of genotype data containing 2000 successive SNPs of 500 individuals. 
+The data are extracted using the following code: 
+
+```{r, eval = F}
+# install.packages("bigsnpr")
+library(bigsnpr)
+
+`%&%` <- function(a,b) paste0(a,b)
+data.dir <- "../data/genotype/"
+dir.create(data.dir, recursive=TRUE, showWarnings=FALSE)
+
+.bed.file <- data.dir %&% "1000G_phase3_common_norel.bed"
+if (!file.exists(.bed.file)) {
+  bigsnpr::download_1000G(data.dir)
+}
+
+.bk.file <- data.dir %&% "1000G_phase3_common_norel.rds"
+if (!file.exists(.bk.file)){
+  BED <- snp_readBed(.bed.file)
+}
+dat <- snp_attach(.bk.file)$genotypes
+
+nn <- 500
+pp <- 2000
+
+set.seed(12345)
+startpoint <- sample(1 : (ncol(dat)-pp), size = 1)
+if (nn < 2490) {ii.idx <- sample(1 : 2490, size = nn)}
+X <- dat[ii.idx, startpoint : (startpoint+pp-1)]
+
+example.data.dir <- "./example-data/"
+saveRDS(X, file = example.data.dir %&% "genotype-subset-1.rds")
+```
+
+
+We set three variables, `X83`, `X1133`, and `X1406`, as 
+the effect variables, each having a non-zero
+effect size of 1 (before scaling). 
+Then, we generate the linear predictor `eta`. 
+We scale the linear combination to avoid unexpected large or 
+small values in `eta`. 
+
+```{r}
+`%&%` <- function(a,b) paste0(a,b)
+example.data.dir <- "./example-data/"
+
+X <- readRDS(example.data.dir %&% "genotype-subset-1.rds")
+nn <- nrow(X)  # 500
+pp <- ncol(X)  # 2000
+
+n_effect_vars <- 3
+## effect variables with non-zero effects
+effect_idx <- c(83, 1133, 1406)
+
+## effect size (before scaling)
+effect_size <- rep(1, times = n_effect_vars)
+
+## linear predictor
+eta <- scale(X[,effect_idx, drop=F] %*% as.matrix(effect_size))
+
+## response
+expit <- function(eta) {
+  ifelse(eta > 0, 1 / (1 + exp(-eta)), exp(eta) / (1 + exp(eta)))
+}
+set.seed(20240220)
+y <- rbinom(nn, 1, expit(eta))
+```
+
+## Fit a logistic regression based GSuSiE model
+
+When fitting a GLM-based GSuSiE model, we prefer adding an all-one column to 
+introduce an intercept term. In practice, we are inclined to add this auxiliary 
+column to the end of the design matrix X such that variable indices would not 
+be confusing when printing the summarized results by the `summary()` function. 
+This step is optional; nevertheless, we find that, by adding this all-one 
+column, the model is less likely to be overfitted. (Wooh!)
+
+By default, we assume there are no more than 10 effect variables
+and set `maxL = min(10, ncol(X))`. You may choose to specify another
+value to `maxL`.
+
+To specify fitting a **logistic regression based GSuSiE model**, 
+use the argument `family = "binomial"`. Correspondingly, the
+`gsusie()` function call is:
+
+```{r}
+library(gsusie)
+res_gs <- gsusie(cbind(X, 1), y, family = "binomial")
+```
+
+### Posterior inclusion probabilities
+
+The `print_gsusie_coefficients()` function offers 10 (by default) variables
+with the highest posterior inclusion probabilities (PIPs). By default,
+we output the 95% credible intervals of the posterior estimation of the coefficients. 
+
+```{r}
+print_gsusie_coefficients(res_gs)
+```
+
+### Credible sets (CS)
+
+As with the SuSiE method, we output 95% credible sets by default.
+
+```{r}
+print(res_gs$sets)
+```
+
+The three relevant signals have been captured by the 3 credible sets
+here. Effect variables `X83` and `X1406` are detected, 
+each discovered along with another highly-correlated null variable. 
+
+### Graphical display of PIPs and credible sets
+
+The `gsusie_plot()` function provides plots for the PIP of each variable.
+
+By default, since the intercept is just an auxiliary variable, we do not
+include it in the plot. In this case, the argument `intercept_index` needs
+to be specified. (P.S. By default, we set `include_intercept = FALSE` to
+remove the intercept term on the plot.)
+
+```{r, fig.height=3, fig.width=5}
+gsusie_plot(res_gs, y = "PIP", 
+            include_intercept = FALSE, 
+            intercept_index = (pp+1), 
+            effect_indices = effect_idx)
+```
+
+By specifying `effect_indices`, the true effect variables are
+colored in red. The 95% credible sets are identified as circled in
+different colors. 
+
+## Some additional words
+
+As you may notice, the `gsusie()` function provides an option for robust estimation. 
+Well... yes. The robust approaches in this package aim to down-weight the impact 
+of outliers, i.e., the extremely big response values, in the model fitting. 
+These approaches are effective in fitting a Poisson regression based 
+GSuSiE model. 
+However, they do not demonstrate a comparable advantage over a logistic 
+regression based GSuSiE model; 
+what's worse, those robust approaches could be harmful. 
+That is because, unlike the count data in which some big numbers may occur,
+the distribution of a binary response does not spread out; 
+the value of a binary response is just one or zero. 
+As a result, robust estimation is unnecessary. 
+

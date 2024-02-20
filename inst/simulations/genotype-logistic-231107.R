@@ -14,8 +14,7 @@ if.needed <- function(.files, .code) {
 }
 
 # getwd()
-# files.dir <- "./R/"
-files.dir <- "~/projects/gsusie/R/"
+files.dir <- "./R/"
 r_file_names <- list.files(path = files.dir)
 for (i in 1 : length(r_file_names)) {
   source(files.dir %&% r_file_names[i])

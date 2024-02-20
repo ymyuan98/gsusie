@@ -60,3 +60,8 @@ results/directories-descriptions.xlsx
 *.xlsx
 tests/params-genotype.csv
 tests/params-synthetic.csv
+data/genotype/1000G_phase3_common_norel.fam2
+data/genotype/1000G_phase3_common_norel.fam
+data/genotype/1000G_phase3_common_norel.bk
+data/genotype/1000G_phase3_common_norel.bim
+data/genotype/1000G_phase3_common_norel.bed

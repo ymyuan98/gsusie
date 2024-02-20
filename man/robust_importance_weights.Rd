@@ -29,15 +29,22 @@ fraction of outliers: we define the
 \code{simple_outlier_fraction} percent of subjects with the highest
 absolute values (inverse of pseudo-variance) as outliers.
 By default, \code{simple_outlier_fraction=NULL} does not set any outlier
-fraction.}
+fraction. Either \code{simple_outlier_fraction} or
+\code{simple_outlier_thres} should be specified when
+\code{robust_method = "simple"}.}
 
 \item{simple_outlier_thres}{a real value, indicating the outliers whose
 inverse of pseudo-variance exceed this threshold to be removed from the
-current iteration.}
+current iteration. Either \code{simple_outlier_fraction} or
+\code{simple_outlier_thres} should be specified when
+\code{robust_method = "simple"}.}
 
-\item{robust_tuning_method}{If \code{robust_tuning_method="M"},
-then M-estimation is performed. If \code{robust_tuning_method="S"},
-then S-estimation is performed.}
+\item{robust_tuning_method}{If \code{robust_tuning_method = "M"},
+M-estimation is performed. If \code{robust_tuning_method = "S"},
+S-estimation is performed. This argument specifies the tuning method,
+i.e., the method for defining outliers in each iteration, when applying
+Huber or Bisquare reweighting method (\code{robust_method = "huber"} or
+\code{robust_method = "bisquare"}).}
 
 \item{previous_imp_weights}{importance weights in the previous iteration,
 used to calculate the importance weights in the current iteration for the

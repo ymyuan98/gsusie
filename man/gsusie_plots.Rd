@@ -7,9 +7,11 @@
 gsusie_plot(
   model,
   y,
+  include_intercept = FALSE,
+  intercept_index = NULL,
+  effect_indices = NULL,
   add_bar = FALSE,
   pos = NULL,
-  b = NULL,
   max_cs = 400,
   add_legend = NULL,
   ...
@@ -30,6 +32,16 @@ z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale,
 (base-10) log-scale. For any other setting, the data are plotted as
 is.}
 
+\item{include_intercept}{Boolean. If \code{include_intercept = FALSE},
+the intercept term is removed from the plot; the index of the intercept
+is specified in \code{intercept_index}.}
+
+\item{intercept_index}{a numeric number specifying the index of the intercept.
+It is required when \code{include_intercept=FALSE} (by default).}
+
+\item{effect_indices}{a numeric vector of indices of effect variables.
+Those points are highlighted in red.}
+
 \item{add_bar}{If \code{add_bar = TRUE}, add horizontal bar to
 signals in credible interval.}
 
@@ -40,9 +52,6 @@ where \code{pos$attr} is a character string of the name of index
 variable in \code{model} object, and \code{pos$start} and
 \code{pos$end} are boundaries of indices to plot. See the provided
 examples.}
-
-\item{b}{For simulated data, set \code{b = TRUE} to highlight
-"true" effects (highlights in red).}
 
 \item{max_cs}{The largest credible set to display, either based on
 purity (set \code{max_cs} between 0 and 1), or based on size (set

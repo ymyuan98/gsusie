@@ -3,21 +3,31 @@
 #' @title G-SuSiE Plots.
 #'
 #' @description \code{gsusie_plot} produces a per-variable summary of
-#'   the G-SuSiE credible sets. 
+#'   the G-SuSiE credible sets.
 #'
 #' @param model A SuSiE or G-SuSiE fit, typically an output from
-#'   \code{\link{gsusie}} or one of its variants. 
+#'   \code{\link{gsusie}} or one of its variants.
 #'   For \code{gsuse_plot},
 #'   the susie fit must have \code{model$z}(?), \code{model$PIP}, and may
 #'   include \code{model$sets}. \code{model} may also be a vector of
 #'   z-scores or PIPs.
 #'
 #' @param y A string indicating what to plot: either \code{"z_original"} for
-#'   z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale, 
+#'   z-scores, \code{"z"} for z-score derived p-values on (base-10) log-scale,
 #'   \code{"PIP"} for posterior inclusion probabilities,
 #'   \code{"log10PIP"} for posterior inclusion probabiliities on the
 #'   (base-10) log-scale. For any other setting, the data are plotted as
 #'   is.
+#'
+#' @param include_intercept Boolean. If \code{include_intercept = FALSE},
+#'   the intercept term is removed from the plot; the index of the intercept
+#'   is specified in \code{intercept_index}.
+#'
+#' @param intercept_index a numeric number specifying the index of the intercept.
+#'    It is required when \code{include_intercept=FALSE} (by default).
+#'
+#' @param effect_indices a numeric vector of indices of effect variables.
+#'    Those points are highlighted in red.
 #'
 #' @param add_bar If \code{add_bar = TRUE}, add horizontal bar to
 #'   signals in credible interval.
@@ -29,9 +39,6 @@
 #'   variable in \code{model} object, and \code{pos$start} and
 #'   \code{pos$end} are boundaries of indices to plot. See the provided
 #'   examples.
-#'
-#' @param b For simulated data, set \code{b = TRUE} to highlight
-#'   "true" effects (highlights in red).
 #'
 #' @param max_cs The largest credible set to display, either based on
 #'   purity (set \code{max_cs} between 0 and 1), or based on size (set
@@ -58,8 +65,13 @@
 #'
 #' @export
 #'
-gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
-                       max_cs = 400, add_legend = NULL, ...) {
+gsusie_plot <- function (model, y,
+                         include_intercept = FALSE,
+                         intercept_index = NULL,
+                         effect_indices = NULL,
+                         add_bar = FALSE,
+                         pos = NULL,
+                         max_cs = 400, add_legend = NULL, ...) {
   is_susie <- inherits(model,c("susie", "gsusie"))
   ylab <- y
   color <- c(
@@ -77,28 +89,7 @@ gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     "darkturquoise", "green1", "yellow4", "yellow3",
     "darkorange4", "brown"
   )
-#   if (y == "z") {
-#     if (is_susie) {
-#       if (is.null(model$z))
-#         stop("z-scores are not available from SuSiE/G-SuSiE fit; please set ",
-#              "compute_univariate_zscore = TRUE in gsusie() call")
-#       zneg <- -abs(model$z)
-#     }
-#     else
-#       zneg <- -abs(model)
-#     p <- -log10(2*pnorm(zneg))
-#     ylab <- "-log10(p)"
-#   } else if (y == "z_original") {
-#     if (is_susie) {
-#       if (is.null(model$z))
-#         stop("z-scores are not available from SuSiE/G-SuSiE fit; please set ",
-#              "compute_univariate_zscore = TRUE in gsusie() call")
-#       p <- model$z
-#     } else {
-#       p <- model
-#     }
-#     ylab <- "z score"
-#   } else if (y == "PIP") {
+
   if (y == "PIP"){
     if (is_susie)
       p <- model$pip
@@ -112,13 +103,17 @@ gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     ylab <- "log10(PIP)"
   } else {
     if (is_susie){
-    #   stop("Need to specify z_original, z, PIP or log10PIP for SuSiE fits")
       stop("Need to specify PIP or log10PIP for SuSiE/G-SuSiE fits")
     }
     p <- model
   }
-  if(is.null(b))
-    b <- rep(0,length(p))
+  if (!include_intercept){
+    if (is.null(intercept_index)) {
+      stop("To remove the intercept, please specify its index...")
+    }
+    p <- p[-intercept_index]
+  }
+
   if(is.null(pos))
     pos <- 1:length(p)
   start <- 0
@@ -154,7 +149,7 @@ gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
     end_adj <- max(max(model[[pos$attr]]) - pos$end,0)
     pos <- (1 + start_adj):(length(p) - end_adj)
   } else {
-    if (!all(pos %in% 1:length(p))) 
+    if (!all(pos %in% 1:length(p)))
       stop("Provided position is outside the range of variables")
   }
   legend_text <- list(col = vector(), purity = vector(), size = vector())
@@ -210,7 +205,7 @@ gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
           text[i] <- paste0("L",i,": C=",legend_text$size[i],"/R=",
                            legend_text$purity[i])
       }
-      if (!(add_legend %in% c("bottomright", "bottom", "bottomleft", "left", 
+      if (!(add_legend %in% c("bottomright", "bottom", "bottomleft", "left",
         "topleft", "top", "topright", "right", "center"))) {
           add_legend <- "topright"
         }
@@ -218,7 +213,9 @@ gsusie_plot <- function (model, y, add_bar = FALSE, pos = NULL, b = NULL,
              pch = 15)
     }
   }
-  points(pos[b != 0] + start,p[b != 0] + start,col = 2,pch = 16)
+  if (!is.null(effect_indices))
+    points(pos[effect_indices] + start, p[effect_indices] + start,
+           col = 2,pch = 16)
   # options(scipen = scipen0)
   return(invisible())
 }

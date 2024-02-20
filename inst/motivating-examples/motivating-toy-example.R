@@ -5,14 +5,15 @@ library(glmnet)
 library(MASS)
 library(stringr)
 library(patchwork)
+library(gsusie)
 
 
 `%&%` <- function(a, b) paste0(a,b)
 
-files.dir <- "./R/"
-r_file_names <- list.files(path = files.dir)
+source.dir <- "./R/"
+r_file_names <- list.files(path = source.dir)
 for (i in 1 : length(r_file_names)) {
-  source(files.dir %&% r_file_names[i])
+  source(source.dir %&% r_file_names[i])
 }
 
 
@@ -142,8 +143,14 @@ wrap_plots(p2, p3, p4, p5, nrow = 2)
 
 # preload_bed_data
 data.dir <- "~/Documents/research/data/genotype/"
+
+.bed.file <- data.dir %&% "1000G_phase3_common_norel.bed"
+if (!file.exists(.bed.file)) {
+  bigsnpr::download_1000G(data.dir)
+}
+
 .bk.file <- data.dir %&% "1000G_phase3_common_norel.rds"
-if(!file.exists(.bk.file)){
+if (!file.exists(.bk.file)){
   BED <- snp_readBed(.bed.file)
 }
 dat <- snp_attach(.bk.file)$genotypes

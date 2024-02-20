@@ -1,36 +1,40 @@
+Encoding: UTF-8
 Package: gsusie
 Type: Package
-Title: Sum of Single-Effects Generalized Linear Models
-Version: 0.1.0
-Date: 2024-01-04
+Title: Generalized Sum of Single-Effects Models
+Version: 0.2.0
+Date: 2024-02-20
 Authors@R: 
     person("Ming", "Yuan", , email = "ming.yuan@stat.ubc.ca", 
             role = c("aut", "cre"))
 Depends:
-    R(>= 3.0.2)
+    R(>= 3.5.0)
 Imports:
     susieR,
     crayon,
-    stats,
-    MASS
+    stats
 Suggests:
     knitr,
-    testthat (>= 3.0.0)
-Description: Implements methods for variable selection in generalized linear 
-  models (GLMs), especially logistic and Poisson regression. The current 
-  method, named "Generalized Sum of Single Effects" (GSuSiE) model, 
+    testthat (>= 3.0.0),
+    bigsnpr,
+    MASS
+Description: This package implements methods for variable selection in 
+  generalized linear models (GLMs), especially logistic and Poisson regression. 
+  The current method, named "Generalized Sum of Single Effects" (GSuSiE), 
   is developed from the "Sum of Single Effects" (SuSiE) model proposed 
-  by Wang et al (2020) <DOI:10.1101/501114>. This method is compatible for 
-  sparse variable selection problem in high-dimensional settings, especially 
+  by Wang et al. (2020) <DOI:10.1101/501114>. This method is compatible with 
+  sparse variable selection problems in high-dimensional settings, especially 
   when variables are highly correlated. This method provides summaries such as 
   posterior inclusion probabilities (PIPs) and credible sets to make inferences 
   on which variables should be selected. Additionally, robust estimations are 
-  provided to avoid the potential affect of outliers to model fitting. The 
-  adapted iterative Bayesian Stepwise Selection (IBSS) algorithm is combined 
-  with iterative reweighted least squared (IRLS) to address GLMs and robust 
-  estimation. 
-Encoding: UTF-8
+  provided to avoid the potential effect of outliers on model fitting. 
+  The adapted iterative Bayesian Stepwise Selection (IBSS) algorithm is combined 
+  with the iterative reweighted least squared (IRLS) approach to address GLMs 
+  and robust estimation. 
+URL: https://github.com/ymyuan98/gsusie
+BugReports: https://github.com/ymyuan98/gsusie/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 License: MIT + file LICENSE
 Config/testthat/edition: 3
+VignetteBuilder: knitr

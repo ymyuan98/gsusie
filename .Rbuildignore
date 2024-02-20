@@ -2,4 +2,5 @@
 ^\.Rproj\.user$
 ^inst/motivating-examples
 ^inst/simulations
+^data/genotype
 ^LICENSE\.md$

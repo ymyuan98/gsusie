@@ -13,8 +13,7 @@ if.needed <- function(.files, .code) {
 }
 
 # getwd()
-files_path <- "~/projects/gsusie/R/"
-# files_path <- "./R/"
+files_path <- "./R/"
 r_file_names <- list.files(path = files_path)
 
 for (i in 1 : length(r_file_names)) {

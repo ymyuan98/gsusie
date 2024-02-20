@@ -6,14 +6,8 @@
 \usage{
 compute_colstats(X, scale = TRUE)
 }
-\description{
-This file defines the auxiliary computation functions.
-}
-\details{
-\code{compute_colstats} computes the mean and standard deviation of each
-column.
-
-\param{scale} Boolean, indicator to perform standardization or not.
+\arguments{
+\item{scale}{Boolean, indicator to perform standardization or not.
 Call \code{scale = TRUE} to compute the column-wise means and standard
 deviations (sd). If \code{scale = FALSE}, the output mean and sd vectors are,
 respectively, all-0 and all-1 vector of length equal the number of columns of
@@ -27,6 +21,13 @@ deviations of X if \code{scale=TRUE}, a p-dim vector of ones otherwise;
 
 \code{compute_Xb} offers the matrix multiplication of
 an (n x p) matrix \code{X} and a (p x 1) array/matrix {b}.
-The output is a (n x 1) matrix.
+The output is a (n x 1) matrix.}
+}
+\description{
+This file defines the auxiliary computation functions.
+}
+\details{
+\code{compute_colstats} computes the mean and standard deviation of each
+column.
 }
 \keyword{internal}
